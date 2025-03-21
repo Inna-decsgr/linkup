@@ -1,0 +1,34 @@
+const express = require("express");
+const mysql = require("mysql");
+const cors = require("cors");
+require("dotenv").config();
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// 📌 MySQL 연결 설정
+const db = mysql.createConnection({
+  host: process.env.DB_HOST, 
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
+db.connect((err) => {
+  if (err) {
+    console.error("❌ MySQL 연결 실패:", err);
+    return;
+  }
+  console.log("✅ MySQL 연결 성공!");
+});
+
+// 📌 기본 API
+app.get("/", (req, res) => {
+  res.send("백엔드 서버 실행 중!");
+});
+
+// 📌 서버 실행 (포트 5000)
+app.listen(5000, () => {
+  console.log("🚀 서버가 5000번 포트에서 실행 중!");
+});
