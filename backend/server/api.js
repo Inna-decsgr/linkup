@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const db = require("../models/db"); // MySQL 연결된 db 가져오기
+const { dbPromise } = require('../models/db');
+
 
 const router = express.Router();
 
@@ -69,6 +71,44 @@ router.post("/login", async (req, res) => {
   }
 })
 
+
+
+// 📌 사용자 정보 수정 API
+router.post("/editprofile", async (req, res) => {
+  const { userid, username, email, telephone, id } = req.body;
+
+  console.log('🔍 전달받은 사용자 id:', id); // ✅ 출력해서 확인 가능!
+
+  if (!userid || !username || !email || !telephone) {
+    return res.status(400).json({ message: '빈 항목을 모두 입력해주세요.' });
+  }
+
+  try {
+    // 1. 사용자 존재 확인
+    const [users] = await dbPromise.query('SELECT * FROM users WHERE id = ?', [id]);
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: '존재하지 않는 사용자입니다.' });
+    }
+
+    // 2. 사용자 정보 업데이트
+    await dbPromise.query(
+      'UPDATE users SET userid = ?, username = ?, email = ?, telephone = ? WHERE id = ?',
+      [userid, username, email, telephone, id]
+    );
+
+    // 3. 수정된 사용자 정보 다시 조회
+    const [updated] = await dbPromise.query(
+      'SELECT id, username, email, userid, telephone, created_at FROM users WHERE id = ?',
+      [id]
+    );
+
+    return res.status(200).json(updated[0]);
+  } catch (err) {
+    console.error('사용자 정보 수정 중 오류:', err);
+    return res.status(500).json({ message: '서버 오류로 인해 사용자 정보 수정에 실패했습니다.' });
+  }
+});
 
 
 
