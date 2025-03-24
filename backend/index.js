@@ -3,6 +3,7 @@ const mysql = require("mysql");
 const cors = require("cors");
 require("dotenv").config();
 const apiRoutes = require("./server/api");
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", apiRoutes); // /api/...로 시작하는 모든 API가 api.js에서 자동으로 연결됨
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+
 
 // 📌 서버 실행 (포트 5000)
 app.listen(5000, () => {
