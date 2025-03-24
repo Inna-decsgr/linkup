@@ -8,28 +8,43 @@ export default function EditUserProfile({ user, setisEdit }) {
     userid: '',
     username: '',
     email: '',
-    telephone: ''
+    telephone: '',
+    profile_image: user.profile_image || 'default_profile.png'
   });
+  const [previewImage, setPreviewImage] = useState(
+    user.profile_image === 'default_profile.png'
+      ? `/images/default_profile.png`
+      : `http://localhost:5000/images/${user.profile_image}`
+  );
+  const [selectedFile, setSelectedFile] = useState(null);  // 선택된 새 이미지
+
   const isChanged = () => {
     return (
       user.userid !== editUser.userid ||
       user.username !== editUser.username ||
       user.email !== editUser.email ||
-      user.telephone !== editUser.telephone
+      user.telephone !== editUser.telephone ||
+      selectedFile !== null  // 이미지가 새로 선택된 경우
     );
   }
   const handleSubmit = async () => {
     if (!isChanged()) return;
 
+    const formData = new FormData();
+    formData.append('id', user.id);
+    formData.append('userid', user.userid);
+    formData.append('username', user.username);
+    formData.append('email', editUser.email);
+    formData.append('telephone', editUser.telephone);
+
+    if (selectedFile) {
+      formData.append('profile_image', selectedFile);
+    }
+
+
     const response = await fetch('http://localhost:5000/api/editprofile', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...editUser,
-        id: user.id
-      })
+      body: formData
     });
 
     const data = await response.json();
@@ -71,6 +86,23 @@ export default function EditUserProfile({ user, setisEdit }) {
               className='border ml-2 rounded-sm'
               required
             />
+          </div>
+          <div>
+            <label>프로필 이미지</label>
+            <div>
+              <img src={previewImage} alt="프로필 미리보기" className='w-[100px] h-[100px] object-cover rounded-full' />
+              <input
+                type="file"
+                accept='image/*'
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setSelectedFile(file);
+                    setPreviewImage(URL.createObjectURL(file));
+                  }
+                }}
+              />
+            </div>
           </div>
           <div>
             <label>사용자 이름</label>
