@@ -2,9 +2,11 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const db = require("../models/db"); // MySQL 연결된 db 가져오기
 const { dbPromise } = require('../models/db');
-
-
+const multer = require('multer');
+const path = require('path');
 const router = express.Router();
+
+
 
 // 📌 회원가입 API
 router.post("/signup", async (req, res) => {
@@ -36,48 +38,66 @@ router.post("/login", async (req, res) => {
   const { userid, password } = req.body;
 
   try {
-    // 1. userid로 사용자 찾기
-    const query = 'SELECT * FROM users WHERE userid = ?';
-    db.query(query, [userid], async (err, results) => {
-      if (err) {
-        console.error("사용자 조회 실패", err);
-        return res.status(500).json({ message: '서버 오류' });
-      }
+    const [rows] = await dbPromise.query(
+      'SELECT * FROM users WHERE userid = ?',
+      [userid]
+    );
 
-      if (results.length === 0) {
-        return res.status(401).json({ message: "존재하지 않는 사용자입니다." });
-      }
+    if (rows.length === 0) {
+      return res.status(401).json({ message: "존재하지 않는 사용자입니다." });
+    }
 
-      const user = results[0];
+    const user = rows[0];
 
-      // 2. 비밀번호 비교
-      const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
+    }
 
-      if (!isMatch) {
-        return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
-      }
+    const { password: pw, ...userInfo } = user;
 
-      // 3. 로그인 성공 => 비밀번호 제거 후 사용자 정보 반환
-      const { password: pw, ...userInfo } = user;
-
-      return res.status(200).json({
-        message: "로그인 성공",
-        user: userInfo
-      });
+    return res.status(200).json({
+      message: "로그인 성공",
+      user: userInfo
     });
   } catch (error) {
     console.error("로그인 중 예외 발생", error);
     res.status(500).json({ message: "로그인 실패" });
   }
-})
+});
+
+
+// 이미지 등록: multer 설정
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../public/images'));
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname); // 확장자만 추출 (.jpg 등)
+    const safeName = file.originalname
+      .replace(/\s+/g, '_')         // 공백 → 언더스코어
+      .replace(/[^\w.-]/g, '')      // 한글/특수문자 제거
+      .replace(ext, '');            // 확장자 제거 후 다시 붙이기
+
+    cb(null, `${timestamp}_${safeName}${ext}`);
+  }
+});
+
+
+const upload = multer({ storage });
 
 
 
 // 📌 사용자 정보 수정 API
-router.post("/editprofile", async (req, res) => {
+router.post("/editprofile", upload.single('profile_image'), async (req, res) => {
   const { userid, username, email, telephone, id } = req.body;
+  const profileImage = req.file ? req.file.filename : null;
+
 
   console.log('🔍 전달받은 사용자 id:', id); // ✅ 출력해서 확인 가능!
+  console.log('📷 업로드된 이미지:', profileImage);
+  
 
   if (!userid || !username || !email || !telephone) {
     return res.status(400).json({ message: '빈 항목을 모두 입력해주세요.' });
@@ -91,15 +111,23 @@ router.post("/editprofile", async (req, res) => {
       return res.status(404).json({ message: '존재하지 않는 사용자입니다.' });
     }
 
-    // 2. 사용자 정보 업데이트
-    await dbPromise.query(
-      'UPDATE users SET userid = ?, username = ?, email = ?, telephone = ? WHERE id = ?',
-      [userid, username, email, telephone, id]
-    );
+    // 2. 사용자 정보 업데이트(이미지 포함 여부에 따라 분기)
+    if (profileImage) {
+      await dbPromise.query(
+        'UPDATE users SET userid = ?, username = ?, email = ?, telephone = ?, profile_image = ? WHERE id = ?',
+        [userid, username, email, telephone, profileImage, id]
+      );
+    } else {
+      await dbPromise.query(
+        'UPDATE users SET userid = ?, username = ?, email = ?, telephone = ? WHERE id = ?',
+        [userid, username, email, telephone, id]
+      );
+    }
+    
 
     // 3. 수정된 사용자 정보 다시 조회
     const [updated] = await dbPromise.query(
-      'SELECT id, username, email, userid, telephone, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, userid, telephone, profile_image, created_at FROM users WHERE id = ?',
       [id]
     );
 
