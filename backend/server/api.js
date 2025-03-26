@@ -140,4 +140,62 @@ router.post("/editprofile", upload.single('profile_image'), async (req, res) => 
 
 
 
+// 📌 모든 사용자 정보 조회
+router.get("/users", async (req, res) => {
+  try {
+    const [users] = await dbPromise.query(
+      'SELECT id, username, userid, profile_image FROM users'
+    );
+
+    return res.status(200).json(users);
+    
+  } catch (error) {
+    res.status(500).json({ message: "사용자 정보를 불러올 수 없습니다." });
+  }
+});
+
+
+// 📌 검색한 userid로 사용자 조회
+router.get("/search", async (req, res) => {
+  const { keyword } = req.query;
+  console.log('전달받은 사용자 id:', keyword); // ✅ 출력해서 확인 가능!
+
+
+  try {
+    const [users] = await dbPromise.query(
+      `SELECT id, username, userid, profile_image 
+      FROM users 
+      WHERE userid LIKE ?`,
+      [`%${keyword}%`]  // keyword가 포함된 userid 검색!
+    );
+
+    return res.status(200).json(users);
+    
+  } catch (error) {
+    console.error("검색 실패:", error);
+    res.status(500).json({ message: "사용자 검색 중 오류 발생" });
+  }
+});
+
+// 특정 사용자에 대한 정보 조회
+router.get("/users/:userid", async (req, res) => {
+  const { userid } = req.params;
+  try {
+    const [ users ] = await dbPromise.query(
+      "SELECT id, username, userid, profile_image FROM users WHERE userid = ?",
+      [userid]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+
+    res.status(200).json(users[0]);
+  } catch (error) {
+    res.status(500).json({ message: "유저 조회 실패" });
+  }
+})
+
+
+
 module.exports = router; // 라우터 내보내기
