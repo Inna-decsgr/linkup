@@ -33,9 +33,9 @@ export default function Topbar() {
         {state.user ? (
           <div className='flex space-x-5 items-center'>
             <Link to="/search"><i className="fa-solid fa-magnifying-glass"></i></Link>
-            <Link to="/newpost"><i class="fa-solid fa-square-plus"></i></Link>
+            <Link to="/newpost"><i className="fa-solid fa-square-plus"></i></Link>
             <button onClick={() => navigate('/settings')}><i className="fa-solid fa-gear"></i></button>
-            <Link to="/profile">
+            <Link to={`/profile/${state.user.userid}`}>
               <img src={profileImageUrl} alt="프로필 이미지" className='w-[40px] h-[40px] object-cover rounded-full'/>
             </Link>
             <Button text="로그아웃" width="w-[100px]" onClick={handleLogout} />  
