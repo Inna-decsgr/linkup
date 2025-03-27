@@ -7,6 +7,7 @@ export default function EditUserProfile({ user, setisEdit }) {
   const [editUser, setEditUser] = useState({
     userid: '',
     username: '',
+    bio: '',
     email: '',
     telephone: '',
     profile_image: user.profile_image || 'default_profile.png'
@@ -22,6 +23,7 @@ export default function EditUserProfile({ user, setisEdit }) {
     return (
       user.userid !== editUser.userid ||
       user.username !== editUser.username ||
+      user.bio !== editUser.bio ||
       user.email !== editUser.email ||
       user.telephone !== editUser.telephone ||
       selectedFile !== null  // 이미지가 새로 선택된 경우
@@ -32,8 +34,9 @@ export default function EditUserProfile({ user, setisEdit }) {
 
     const formData = new FormData();
     formData.append('id', user.id);
-    formData.append('userid', user.userid);
-    formData.append('username', user.username);
+    formData.append('userid', editUser.userid);
+    formData.append('username', editUser.username);
+    formData.append('bio', editUser.bio);
     formData.append('email', editUser.email);
     formData.append('telephone', editUser.telephone);
 
@@ -65,6 +68,7 @@ export default function EditUserProfile({ user, setisEdit }) {
       setEditUser({
         userid: user.userid || '',
         username: user.username || '',
+        bio: user.bio || '',
         email: user.email || '',
         telephone: user.telephone || ''
       });
@@ -111,6 +115,17 @@ export default function EditUserProfile({ user, setisEdit }) {
               name="username"
               value={editUser.username}
               onChange={(e) => setEditUser({ ...editUser, username: e.target.value})}
+              className='border ml-2 rounded-sm'
+              required
+            />
+          </div>
+          <div>
+            <label>소개</label>
+            <input
+              type="text"
+              name="bio"
+              value={editUser.bio}
+              onChange={(e) => setEditUser({ ...editUser, bio: e.target.value})}
               className='border ml-2 rounded-sm'
               required
             />

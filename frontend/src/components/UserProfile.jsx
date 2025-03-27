@@ -81,7 +81,8 @@ export default function UserProfile({ user, isMe }) {
         </div>
       </div>
       <div className='w-[500px] mx-auto'>
-        <p className='text-left font-medium mt-4 mb-2'>@{user?.userid}</p>
+        <p className='text-left font-medium mt-4'>@{user?.userid}</p>
+        <p className='mt-1 mb-3 text-xs'>{ user?.bio }</p>
         <p>{ isFollowing}</p>
         <div className='flex gap-2'>
           {isMe ? (
