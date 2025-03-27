@@ -91,15 +91,16 @@ const upload = multer({ storage });
 
 // 📌 사용자 정보 수정 API
 router.post("/editprofile", upload.single('profile_image'), async (req, res) => {
-  const { userid, username, email, telephone, id } = req.body;
+  const { userid, username, bio, email, telephone, id } = req.body;
   const profileImage = req.file ? req.file.filename : null;
 
 
   console.log('🔍 전달받은 사용자 id:', id); // ✅ 출력해서 확인 가능!
   console.log('📷 업로드된 이미지:', profileImage);
+  console.log('소개글:', bio);
   
 
-  if (!userid || !username || !email || !telephone) {
+  if (!userid || !username || !bio || !email || !telephone) {
     return res.status(400).json({ message: '빈 항목을 모두 입력해주세요.' });
   }
 
@@ -114,20 +115,20 @@ router.post("/editprofile", upload.single('profile_image'), async (req, res) => 
     // 2. 사용자 정보 업데이트(이미지 포함 여부에 따라 분기)
     if (profileImage) {
       await dbPromise.query(
-        'UPDATE users SET userid = ?, username = ?, email = ?, telephone = ?, profile_image = ? WHERE id = ?',
-        [userid, username, email, telephone, profileImage, id]
+        'UPDATE users SET userid = ?, username = ?, bio = ?, email = ?, telephone = ?, profile_image = ? WHERE id = ?',
+        [userid, username, bio, email, telephone, profileImage, id]
       );
     } else {
       await dbPromise.query(
-        'UPDATE users SET userid = ?, username = ?, email = ?, telephone = ? WHERE id = ?',
-        [userid, username, email, telephone, id]
+        'UPDATE users SET userid = ?, username = ?, bio = ?, email = ?, telephone = ? WHERE id = ?',
+        [userid, username, bio, email, telephone, id]
       );
     }
     
 
     // 3. 수정된 사용자 정보 다시 조회
     const [updated] = await dbPromise.query(
-      'SELECT id, username, email, userid, telephone, profile_image, created_at FROM users WHERE id = ?',
+      'SELECT id, username, bio, email, userid, telephone, profile_image, created_at FROM users WHERE id = ?',
       [id]
     );
 
@@ -144,7 +145,7 @@ router.post("/editprofile", upload.single('profile_image'), async (req, res) => 
 router.get("/users", async (req, res) => {
   try {
     const [users] = await dbPromise.query(
-      'SELECT id, username, userid, profile_image FROM users'
+      'SELECT id, username, userid, profile_image, bio FROM users'
     );
 
     return res.status(200).json(users);
@@ -163,7 +164,7 @@ router.get("/search", async (req, res) => {
 
   try {
     const [users] = await dbPromise.query(
-      `SELECT id, username, userid, profile_image 
+      `SELECT id, username, userid, profile_image, bio
       FROM users 
       WHERE userid LIKE ?`,
       [`%${keyword}%`]  // keyword가 포함된 userid 검색!
@@ -182,7 +183,7 @@ router.get("/users/:userid", async (req, res) => {
   const { userid } = req.params;
   try {
     const [ users ] = await dbPromise.query(
-      "SELECT id, username, userid, profile_image FROM users WHERE userid = ?",
+      "SELECT id, username, userid, profile_image, bio FROM users WHERE userid = ?",
       [userid]
     );
 
