@@ -197,5 +197,76 @@ router.get("/users/:userid", async (req, res) => {
 })
 
 
+// 팔로우, 팔로잉 토글 API
+router.post('/follow', async (req, res) => {
+  const { follower_id, following_id } = req.body;
+
+  if (!follower_id || !following_id) {
+    return res.status(400).json({ message: '빈 항목이 있습니다.' });
+  }
+
+  try {
+    // 이미 팔로우하고 있는 상태인지 확인
+    const [existing] = await dbPromise.query(
+      'SELECT * FROM followers WHERE follower_id = ? AND following_id = ?',
+      [follower_id, following_id]
+    );
+
+    if (existing.length > 0) {
+      // 팔로우 중이면 팔로우 취소(언팔)
+      await dbPromise.query(
+        'DELETE FROM followers WHERE follower_id = ? AND following_id = ?',
+        [follower_id, following_id]
+      );
+      return res.status(200).json({
+        message: '언팔로우',
+        following: false,
+        follower_id,
+        following_id,
+      });
+    } else {
+      // 팔로우하는 상태가 아니라면 팔로잉
+      await dbPromise.query(
+        'INSERT INTO followers (follower_id, following_id) VALUES(?, ?)',
+        [follower_id, following_id]
+      );
+      return res.status(201).json({
+        message: '팔로잉 중',
+        following: true,
+        follower_id,
+        following_id
+      });
+    }
+  } catch (err) {
+    console.error('팔로우 토글 중 도중 에러 발생', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+
+// 팔로우중인지 아닌지 조회
+router.get('/follow/status', async (req, res) => {
+  const { follower_id, following_id } = req.query;
+
+  if (!follower_id || !following_id) {
+    return res.status(400).json({ message: '필수 정보가 부족합니다.' });
+  }
+
+  try {
+    const [rows] = await dbPromise.query(
+      'SELECT * FROM followers WHERE follower_id = ? AND following_id = ?',
+      [follower_id, following_id]
+    );
+
+    const isFollowing = rows.length > 0;
+    res.status(200).json({ isFollowing });
+  } catch (err) {
+    console.error('팔로우 상태 확인 에러', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+
+
 
 module.exports = router; // 라우터 내보내기
