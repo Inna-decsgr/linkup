@@ -20,9 +20,9 @@ export default function Topbar() {
 
   const handleLogout = () => {
     // 로그아웃 로직
-    navigate('/')
     dispatch({ type: 'LOGOUT' });  // 사용자 전역 상태 초기화
     localStorage.removeItem('user');  // 로컬스토리지에서 사용자 정보 삭제
+    navigate('/login')
   }
   
 
