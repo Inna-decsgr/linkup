@@ -1,14 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import Button from './ui/Button';
 import UserAllPosts from './UserAllPosts';
+import { useAuth } from '../context/AuthContext';
 
 
-export default function UserProfile({user, isMe}) {
+
+export default function UserProfile({ user, isMe }) {
+  const { state } = useAuth();
   const [showallposts, setAllPosts] = useState(true);
   const [showuserinfo, setUserInfo] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const profileImageUrl = user?.profile_image === 'default_profile.png'
   ? `/images/default_profile.png`
     : `http://localhost:5000/images/${user?.profile_image}`;
+  
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/follow/status?follower_id=${state.user.id}&following_id=${user?.id}`
+        );  
+        const data = await res.json();
+        console.log('팔로우 정보', data);
+        setIsFollowing(data.isFollowing);
+      } catch (err) {
+        console.error('팔로우 상태 확인 실패', err);
+      }
+    };
+
+    if (user?.id) {
+      checkFollowStatus();
+    }
+  }, [user?.id, state.user.id]);
   
   const showAllUserPosts = () => {
     setAllPosts(true);
@@ -19,9 +42,20 @@ export default function UserProfile({user, isMe}) {
     setUserInfo(true);
   };
 
-  useEffect(() => {
-    console.log('사용자 프로필 이미지', user?.profile_image);
-  })
+  const toggleFollow = async () => {
+    const response = await fetch('http://localhost:5000/api/follow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        follower_id: state.user.id,
+        following_id: user?.id
+      })
+    });
+    const data = await response.json();
+    setIsFollowing(data.following);
+  }
 
   return (
     <div>
@@ -48,6 +82,7 @@ export default function UserProfile({user, isMe}) {
       </div>
       <div className='w-[500px] mx-auto'>
         <p className='text-left font-medium mt-4 mb-2'>@{user?.userid}</p>
+        <p>{ isFollowing}</p>
         <div className='flex gap-2'>
           {isMe ? (
             <>
@@ -56,7 +91,13 @@ export default function UserProfile({user, isMe}) {
             </>
           ): (
               <>
-                <Button text="팔로우" width="w-[250px]" />
+                <Button text={
+                  isFollowing ? (
+                    <> 팔로잉 중 <i className="fa-solid fa-chevron-down ml-1"></i></>
+                  ) : (
+                    '팔로우'
+                  )
+                } width="w-[250px]" onClick={toggleFollow}/>
                 <Button text="메시지" width="w-[250px]" />
               </>
           )}
