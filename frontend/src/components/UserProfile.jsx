@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import Button from './ui/Button';
 import UserAllPosts from './UserAllPosts';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from "react-router-dom";
 
 
 
 export default function UserProfile({ user, isMe }) {
   const { state } = useAuth();
+  const navigate = useNavigate();
   const [showallposts, setAllPosts] = useState(true);
   const [showuserinfo, setUserInfo] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -87,7 +89,7 @@ export default function UserProfile({ user, isMe }) {
         <div className='flex gap-2'>
           {isMe ? (
             <>
-              <Button text="프로필 편집" width="w-[250px]" />
+              <Button text="프로필 편집" width="w-[250px]" onClick={() => {navigate('/settings')}}/>
               <Button text="프로필 공유" width="w-[250px]" />
             </>
           ): (
