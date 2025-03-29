@@ -5,18 +5,16 @@ import { useNavigate } from 'react-router-dom';
 
 export default function NewPost() {
   const [previews, setPreviews] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef([]);
   const navigate = useNavigate();
 
   const handleImageChange = (e) => {
-    const files = e.target.files;
-    if (files) {
-      const newPreviews = Array.from(files).map(file =>
-        URL.createObjectURL(file)
-      );
-       // 기존 previews + 새로운 previews 합치기
-      setPreviews(prev => [...prev, ...newPreviews]);
-    }
+    const files = Array.from(e.target.files);
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+
+    setSelectedFiles(prev => [...prev, ...files]);
+    setPreviews(prev => [...prev, ...newPreviews]);
   };
 
   const handleClick = () => {
@@ -28,10 +26,11 @@ export default function NewPost() {
   }
 
   const handleNext = () => {
-    if (previews) {
+    if (selectedFiles.length > 0) {
       navigate('/newpost/details', {
         state: {
-        images: previews
+          images: selectedFiles,     
+          previews: previews       
         }
       })
     } else {
@@ -51,9 +50,9 @@ export default function NewPost() {
         <input
           type="file"
           accept='image/*'
+          multiple
           className='hidden'
           ref={fileInputRef}
-          multiple
           onChange={handleImageChange}
         />
         <div
@@ -64,7 +63,7 @@ export default function NewPost() {
         </div>
       </div>
 
-      <div className=''>
+      <div>
         {previews && (
           <div className='grid grid-cols-2 gap-4 mt-4'>
             {previews.map((src, index) => (
