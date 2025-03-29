@@ -1,29 +1,23 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 
 
-export default function UserSearch({cancel, istag}) {
+export default function UserSearch({cancel, istag, onSelectUser}) {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
+  const [debouncedKeyword, setDebouncedKeyword] = useState('');
   const [results, setResults] = useState([]);
 
   const handleChange = (e) => {
     setKeyword(e.target.value);
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log('키워드', keyword);
+  const handleSubmit = useCallback(async (text) => {
+    if (!text.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/search?keyword=${encodeURIComponent(keyword)}`);
+      const response = await fetch(`http://localhost:5000/api/search?keyword=${encodeURIComponent(text)}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -35,10 +29,31 @@ export default function UserSearch({cancel, istag}) {
     } catch (error) {
       console.error('서버 오류:', error);
     }
-  }
+  }, []);
 
-  const selectUser = () => {
-    console.log('유저 태그');
+
+  // 디바운스 처리
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedKeyword(keyword);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
+  // 디바운스 완료된 키워드로 검색 요청
+  useEffect(() => {
+    if (debouncedKeyword) {
+      handleSubmit(debouncedKeyword);
+    } else {
+      setResults([]);
+    }
+  }, [debouncedKeyword, handleSubmit])
+
+  const selectUser = (user) => {
+    console.log('유저 태그', user);
+    onSelectUser(user);
+    cancel();
   }
 
 
@@ -48,10 +63,10 @@ export default function UserSearch({cancel, istag}) {
         <div>
           <input
             type="text"
+            value={keyword}
             onChange={handleChange}
             className='border w-[300px] outline-none'
             placeholder='검색'
-            onKeyDown={handleKeyDown}
           />
         </div>
         <Button text="취소" width="w-[60px]" onClick={cancel}/>
@@ -59,8 +74,8 @@ export default function UserSearch({cancel, istag}) {
       <div>
         {setResults.length > 0 ? (
           results.map((user, index) => (
-            <div className='flex items-center justify-between'>
-              <div key={index} className='flex cursor-pointer' onClick={() => navigate(`/profile/${user.userid}`)}>
+            <div key={index} className='flex items-center justify-between'>
+              <div  className='flex cursor-pointer' onClick={() => navigate(`/profile/${user.userid}`)}>
                 <div>
                   <img src={user.profile_image === 'default_profile.png'
                   ? '/images/default_profile.png'
@@ -78,9 +93,9 @@ export default function UserSearch({cancel, istag}) {
               <div>
                 <div>
                   {istag && (
-                    <Button text="선택" width="w-[60px]" onClick={selectUser}/>
+                    <Button text="선택" width="w-[60px]" onClick={() => selectUser(user)}/>
                   )}
-              </div>
+                </div>
               </div>
             </div>
           ))
