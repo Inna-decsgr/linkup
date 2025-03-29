@@ -178,7 +178,8 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// 특정 사용자에 대한 정보 조회
+
+// 📌 특정 사용자에 대한 정보 조회
 router.get("/users/:userid", async (req, res) => {
   const { userid } = req.params;
   try {
@@ -198,7 +199,7 @@ router.get("/users/:userid", async (req, res) => {
 })
 
 
-// 팔로우, 팔로잉 토글 API
+// 📌 팔로우, 팔로잉 토글 API
 router.post('/follow', async (req, res) => {
   const { follower_id, following_id } = req.body;
 
@@ -245,7 +246,7 @@ router.post('/follow', async (req, res) => {
 });
 
 
-// 팔로우중인지 아닌지 조회
+// 📌 팔로우중인지 아닌지 조회
 router.get('/follow/status', async (req, res) => {
   const { follower_id, following_id } = req.query;
 
@@ -264,6 +265,64 @@ router.get('/follow/status', async (req, res) => {
   } catch (err) {
     console.error('팔로우 상태 확인 에러', err);
     res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+
+// 📌 새 게시물 작성 후 게시하기
+// multer로 이미지 업로드 받기
+router.post('/newpost', upload.array('images'), async (req, res) => {
+  const connection = await dbPromise.getConnection(); // 트랜잭션 처리 위해 커넥션 요청
+
+  try {
+    const { caption, user_id } = req.body;
+    const taggedUser = req.body.taggedUser ? JSON.parse(req.body.taggedUser) : null;
+    const imageFilenames = req.files.map(file => file.filename);
+    console.log('문구:', caption);
+    console.log('태그된 유저:', taggedUser);
+    console.log('이미지 파일 이름들:', imageFilenames);
+
+    await connection.beginTransaction();
+
+    // 1. posts 테이블에 저장
+    const [postResult] = await connection.query(
+      'INSERT INTO posts (user_id, content) VALUES (?, ?)',
+      [user_id, caption]
+    );
+    const postId = postResult.insertId;
+    // 2. post_images 테이블에 이미지 저장
+    for (const filename of imageFilenames) {
+      await connection.query(
+        'INSERT INTO post_images (post_id, image_url) VALUES (?, ?)',
+        [postId, filename]
+      );
+    }
+     // 3. post_tags 저장
+    if (taggedUser) {
+      await connection.query(
+        'INSERT INTO post_tags (post_id, user_id) VALUES (?, ?)',
+        [postId, taggedUser.id]
+      );
+    }
+
+    await connection.commit();
+
+    res.status(201).json({
+      message: '게시물 등록 성공',
+      post: {
+        id: postId,
+        user_id,
+        caption,
+        taggedUser,
+        images: imageFilenames,
+      },
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('게시물 등록 오류:', error);
+    res.status(500).json({ message: '서버 오류' });
+  } finally {
+    connection.release();
   }
 });
 
