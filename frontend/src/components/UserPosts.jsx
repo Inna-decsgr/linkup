@@ -1,4 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
 
 export default function UserPosts({ userid }) {
   const [allposts, setAllposts] = useState([]);
@@ -36,11 +41,18 @@ export default function UserPosts({ userid }) {
                 <p>{post.created_at}</p>
               </div>
               <div>
-                {post.images.map((img, index) => (
-                  <div key={index}>
+                <Swiper
+                  slidesPerView={1}
+                  modules={[Pagination]}
+                  pagination={{clickable: true, el: '.custom-pagination'}}
+                >
+                  {post.images.map((img, index) => (
+                  <SwiperSlide key={index}>
                     <img src={`http://localhost:5000/images/${img}`} alt={`게시한 이미지 ${index}`} />
-                  </div>
+                  </SwiperSlide>
                 ))}
+                </Swiper>
+                <div className="custom-pagination" style={{ textAlign: 'center' }}></div>
               </div>
               <div className='flex'>
                 <div>
