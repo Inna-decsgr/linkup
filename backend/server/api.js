@@ -158,16 +158,16 @@ router.get("/users", async (req, res) => {
 
 // 📌 검색한 userid로 사용자 조회
 router.get("/search", async (req, res) => {
-  const { keyword } = req.query;
+  const { keyword, userid } = req.query;
   console.log('전달받은 사용자 id:', keyword); // ✅ 출력해서 확인 가능!
-
+  console.log('로그인한 사용자 id', userid);
 
   try {
     const [users] = await dbPromise.query(
       `SELECT id, username, userid, profile_image, bio
       FROM users 
-      WHERE userid LIKE ?`,
-      [`%${keyword}%`]  // keyword가 포함된 userid 검색!
+      WHERE userid LIKE ? AND userid != ?`,
+      [`%${keyword}%`, userid]  // keyword가 포함된 userid 검색!
     );
 
     return res.status(200).json(users);
