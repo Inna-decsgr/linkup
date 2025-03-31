@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
+
 
 
 export default function UserSearch({cancel, istag, onSelectUser}) {
@@ -8,6 +10,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
   const [results, setResults] = useState([]);
+  const { state } = useAuth();
 
   const handleChange = (e) => {
     setKeyword(e.target.value);
@@ -17,7 +20,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
     if (!text.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/search?keyword=${encodeURIComponent(text)}`);
+      const response = await fetch(`http://localhost:5000/api/search?keyword=${encodeURIComponent(text)}&userid=${state.user?.userid}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -29,7 +32,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
     } catch (error) {
       console.error('서버 오류:', error);
     }
-  }, []);
+  }, [state.user?.userid]);
 
 
   // 디바운스 처리
