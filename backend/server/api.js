@@ -440,5 +440,30 @@ router.post('/posts/like', async (req, res) => {
 
 
 
+// 📌 로그인한 사용자가 해당 포스트에 좋아요를 눌렀는지 안눌렀는지 조회
+router.get('/posts/like/status', async (req, res) => {
+  const { post_id, user_id } = req.query;
+  console.log('좋아요할 포스트 아이디', post_id);
+  console.log('좋아요하는 사용자 아이디', user_id);
+
+  if (!post_id || !user_id) {
+    return res.status(400).json({ message: '필수 정보가 부족합니다.' });
+  }
+
+  try {
+    const [rows] = await dbPromise.query(
+      'SELECT * FROM likes WHERE post_id = ? AND user_id = ?',
+      [post_id, user_id]
+    );
+
+    const isLike = rows.length > 0;
+    res.status(200).json({ isLike });
+  } catch (err) {
+    console.error('좋아요 처리 중 에러 발생', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+
 
 module.exports = router; // 라우터 내보내기
