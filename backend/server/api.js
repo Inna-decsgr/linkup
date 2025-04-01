@@ -383,11 +383,58 @@ router.get('/posts/:userid', async (req, res) => {
       };
     });
 
-    console.log('최종 반환 포스트 데이터', postResults);
+    //console.log('최종 반환 포스트 데이터', postResults);
     res.status(200).json(postResults);
 
   } catch (error) {
     res.status(500).json({message: "게시글 조회 실패"})
+  }
+});
+
+
+
+// 📌 좋아요 토글
+router.post('/posts/like', async (req, res) => {
+  const { post_id, user_id } = req.body;
+  console.log('좋아요할 포스트 아이디', post_id);
+  console.log('좋아요하는 사용자 아이디', user_id);
+
+
+  if (!post_id || !user_id) {
+    return res.status(400).json({ message: '필수 정보가 부족합니다.' });
+  }
+
+  try {
+    // 1. 이미 좋아요 했는지 확인
+    const [existing] = await dbPromise.query(
+      'SELECT * FROM likes WHERE post_id = ? AND user_id = ?',
+      [post_id, user_id]
+    );
+
+    if (existing.length > 0) {
+      // 좋아요 해제
+      await dbPromise.query(
+        'DELETE FROM likes WHERE post_id = ? AND user_id = ?',
+        [post_id, user_id]
+      );
+      return res.status(200).json({ isLike: false, data: null });  
+    }
+
+    // 아직 좋아요를 누르지 않았다면 좋아요 추가
+    await dbPromise.query(
+      `INSERT INTO likes (post_id, user_id, created_at) VALUES (?, ?, NOW())`,
+      [post_id, user_id]
+    );
+
+    const [rows] = await dbPromise.query(
+      'SELECT * FROM likes WHERE post_id = ? AND user_id = ?',
+      [post_id, user_id]
+    );
+
+    res.status(201).json({ isLike: true, data: rows[0] });
+  } catch (err) {
+    console.error('좋아요 추가 중 에러 발생', err);
+    res.status(500).json({message: '서버 오류'})
   }
 });
 
