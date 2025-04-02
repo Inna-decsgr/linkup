@@ -120,7 +120,7 @@ export default function UserProfile({ user, isMe }) {
       </div>
       <div className='w-[500px] mx-auto mt-5'>
         {showallposts ? (
-          <UserAllPosts />
+          <UserAllPosts user_id={state.user?.id} userid={state.user?.userid} />
         ): (
           <p>사용자 정보 컴포넌트</p>
         )}
