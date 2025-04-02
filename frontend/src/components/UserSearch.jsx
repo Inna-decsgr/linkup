@@ -78,7 +78,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
         {setResults.length > 0 ? (
           results.map((user, index) => (
             <div key={index} className='flex items-center justify-between'>
-              <div  className='flex cursor-pointer' onClick={() => navigate(`/profile/${user.userid}`)}>
+              <div className='flex cursor-pointer' onClick={() => navigate(`/profile/${user.userid}/${user.id}`)}>
                 <div>
                   <img src={user.profile_image === 'default_profile.png'
                   ? '/images/default_profile.png'
