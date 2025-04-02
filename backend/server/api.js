@@ -471,4 +471,35 @@ router.get('/posts/like/status', async (req, res) => {
 
 
 
+// 해당 계정의 게시물 개수, 팔로워, 팔로잉 몇 명인지 조회
+router.get('/users/postfollowing/:user_id', async (req, res) => {
+  const { user_id } = req.params;
+  console.log('조회할 사용자 아이디', user_id);
+
+  try {
+    const [posts] = await dbPromise.query(
+      'SELECT * FROM posts WHERE user_id = ?',
+      [user_id]
+    )
+    const [followings] = await dbPromise.query(
+      // 내가 누굴 팔로우했는가 following_id = 나의 id
+      // 팔로잉 목록(내가 팔로우한 사람들) => 내가 팔로우한 유저들(팔로잉)
+      'SELECT * FROM followers WHERE following_id = ?',
+      [user_id]
+    )
+    const [followers] = await dbPromise.query(
+      // 누가 나를 팔로우했는가 follower_id = 나의 id
+      // 팔로워 목록(나를 팔로우한 사람들) => 나를 팔로우하는 유저들(팔로워)
+      'SELECT * FROM followers WHERE follower_id = ?',
+      [user_id]
+    );
+    
+    res.status(200).json({ postcount: posts.length, followercount: followers.length, followingcount: followings.length });
+  } catch (err) {
+    console.error('해당 계정의 정보 불러오는 도중 에러 발생', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+})
+
+
 module.exports = router; // 라우터 내보내기
