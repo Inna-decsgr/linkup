@@ -3,11 +3,13 @@ import Button from './ui/Button';
 import UserAllPosts from './UserAllPosts';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from "react-router-dom";
+import PostFollowing from './PostFollowing';
 
 
 
 export default function UserProfile({ user, isMe }) {
   const { state } = useAuth();
+  // 이때 state는 로그인한 사용자, props로 전달받은 정보는 다른 사용자에 대한 정보, 팔로우 정보 표시할 때 사용
   const navigate = useNavigate();
   const [showallposts, setAllPosts] = useState(true);
   const [showuserinfo, setUserInfo] = useState(false);
@@ -66,19 +68,8 @@ export default function UserProfile({ user, isMe }) {
           <div className='pr-[40px]'>
             <img src={profileImageUrl} alt="프로필 이미지" className='w-[100px] h-[100px] object-cover rounded-full' />
           </div>
-          <div className='flex gap-10'>
-            <div>
-              <p className='font-bold'>0</p>
-              <p>게시물</p>
-            </div>
-            <div>
-              <p className='font-bold'>0</p>
-              <p>팔로워</p>
-            </div>
-            <div>
-              <p className='font-bold'>0</p>
-              <p>팔로잉</p>
-            </div>
+          <div>
+            <PostFollowing />
           </div>
         </div>
       </div>
@@ -120,7 +111,7 @@ export default function UserProfile({ user, isMe }) {
       </div>
       <div className='w-[500px] mx-auto mt-5'>
         {showallposts ? (
-          <UserAllPosts user_id={state.user?.id} userid={state.user?.userid} />
+          <UserAllPosts user_id={user?.id} userid={user?.userid} />
         ): (
           <p>사용자 정보 컴포넌트</p>
         )}
