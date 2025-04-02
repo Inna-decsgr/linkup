@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 export default function PostLike({ postid }) {
   const { state } = useAuth();
   const [like, setLike] = useState(false);
+  const [likecount, setLikeCount] = useState(null);
 
   const toggleLike = async () => {
     console.log('라이크 토글', postid, state.user?.id);
@@ -33,6 +34,7 @@ export default function PostLike({ postid }) {
         const data = await res.json();
         console.log('좋아요 상태', data);
         setLike(data.isLike);
+        setLikeCount(data.likecount);
       } catch (error) {
         console.error('좋아요 상태 가져오기 실패', error);
       }
@@ -46,7 +48,9 @@ export default function PostLike({ postid }) {
       <button onClick={toggleLike}>
         <i className={`fa-${like ? 'solid' : 'regular'} fa-heart`}></i>
       </button>
-      <span>1,256</span>
+      {likecount && (
+        <span>{likecount}</span>
+      )}
     </div>
   );
 }
