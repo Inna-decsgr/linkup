@@ -343,7 +343,7 @@ router.get('/posts/:userid', async (req, res) => {
     )
     console.log('해당 사용자가 작성한 포스트 목록', posts);
     if (posts.length === 0) {
-      return res.status(200).json({ message: "게시글 없음" });
+      return res.status(200).json([]);
     } 
 
     // 각 게시물에 태그된 사용자 정보와 이미지 가져오기
@@ -455,9 +455,14 @@ router.get('/posts/like/status', async (req, res) => {
       'SELECT * FROM likes WHERE post_id = ? AND user_id = ?',
       [post_id, user_id]
     );
+    const [likes] = await dbPromise.query(
+      'SELECT * FROM likes WHERE post_id = ?',
+      [post_id]
+    )
 
     const isLike = rows.length > 0;
-    res.status(200).json({ isLike });
+    const likecount = likes.length
+    res.status(200).json({ isLike, likecount: likecount });
   } catch (err) {
     console.error('좋아요 처리 중 에러 발생', err);
     res.status(500).json({ message: '서버 오류' });
