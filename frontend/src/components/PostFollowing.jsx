@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function PostFollowing() {
+  const { state } = useAuth();
   const { user_id } = useParams();
   const [postcount, setPostCount] = useState(null);
   const [followerscount, setFollowersCount] = useState(null);
@@ -24,18 +26,23 @@ export default function PostFollowing() {
 
   return (
     <div>
-      <div className='flex gap-10'>
+      <div>
         <div>
-          <p className='font-bold'>{postcount}</p>
-          <p>게시물</p>
+          <p className='font-bold text-sm mb-2'>{state.user?.username}</p>
         </div>
-        <div>
-          <p className='font-bold'>{followerscount}</p>
-          <p>팔로워</p>
-        </div>
-        <div>
-          <p className='font-bold'>{followingscount}</p>
-          <p>팔로잉</p>
+        <div className='flex gap-10'>
+          <div>
+            <p className='font-bold'>{postcount}</p>
+            <p>게시물</p>
+          </div>
+          <div>
+            <p className='font-bold'>{followerscount}</p>
+            <p>팔로워</p>
+          </div>
+          <div>
+            <p className='font-bold'>{followingscount}</p>
+            <p>팔로잉</p>
+          </div>
         </div>
       </div>
     </div>
