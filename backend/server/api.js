@@ -474,7 +474,6 @@ router.get('/posts/like/status', async (req, res) => {
 // 해당 계정의 게시물 개수, 팔로워, 팔로잉 몇 명인지 조회
 router.get('/users/postfollowing/:user_id', async (req, res) => {
   const { user_id } = req.params;
-  console.log('조회할 사용자 아이디', user_id);
 
   try {
     const [posts] = await dbPromise.query(
@@ -500,6 +499,81 @@ router.get('/users/postfollowing/:user_id', async (req, res) => {
     res.status(500).json({ message: '서버 오류' });
   }
 })
+
+
+
+// 사용자가 팔로우하는 유저들의 모든 게시물들 조회
+router.get('/users/followers/posts/:userid', async (req, res) => {
+  const { userid } = req.params;
+  console.log('조회할 사용자 아이디', userid);
+
+  try {
+    // 1. 해당 사용자가 팔로우한 사용자들의 id 가져오기
+    const [followedUsers] = await dbPromise.query(
+      'SELECT follower_id FROM followers WHERE following_id = ?',
+      [userid]
+    );
+
+    const followedIds = followedUsers.map(user => user.follower_id);
+    console.log('내가 팔로우한 사람들 아이디', followedIds);
+
+    if (followedIds.length === 0) {
+      return res.status(200).json({ posts: [] });  // 팔로우한 사람이 없으면 빈 배열 반환
+    }
+
+    // 2. 팔로우한 사람들이 작성한 게시물들 가져오기
+    const [posts] = await dbPromise.query(
+      `SELECT p.id, p.user_id, p.content, u.userid, p.created_at, u.profile_image
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.user_id = ?`,
+      [followedIds]
+    );
+    console.log('게시물 결과', posts);
+
+    const postIds = posts.map(post => post.id);
+    console.log('포스트 아이디', postIds);
+
+    const [taggedUser] = await dbPromise.query(
+      `SELECT pt.post_id, u.id AS user_id, u.userid
+        FROM post_tags pt
+        JOIN users u ON pt.user_id = u.id
+        WHERE pt.post_id IN (?)`,
+      [postIds]
+    );
+    console.log('태그된 사람', taggedUser);
+
+    // 이미지 정보 가져오기
+    const [images] = await dbPromise.query(
+      `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
+    );
+    console.log('선택된 이미지들', images);
+
+    // posts 배열에 tagged_users, images 추가
+    const postResults = posts.map(post => {
+      const tagged = taggedUser
+        .filter(t => t.post_id === post.id)
+        .map(t => ({ id: t.user_id, userid: t.userid }));
+      
+      const imgs = images
+        .filter(img => img.post_id === post.id)
+        .map(img => img.image_url);
+      
+      return {
+        ...post,
+        tagged_users: tagged,
+        images: imgs
+      };
+    });
+    console.log('최종 결과물', postResults);
+    
+    res.status(200).json({ postResults });
+  } catch (err) {
+    console.error('해당 포스트들에 대한 정보 불러오는 도중 에러 발생', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+})
+
 
 
 module.exports = router; // 라우터 내보내기
