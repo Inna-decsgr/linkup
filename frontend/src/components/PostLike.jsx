@@ -7,7 +7,6 @@ export default function PostLike({ postid }) {
   const [likecount, setLikeCount] = useState(null);
 
   const toggleLike = async () => {
-    console.log('라이크 토글', postid, state.user?.id);
     const res = await fetch('http://localhost:5000/api/posts/like', {
       method: 'POST',
       headers: {
@@ -19,9 +18,9 @@ export default function PostLike({ postid }) {
       }),
     });
     const data = await res.json();
-    console.log('좋아요한 결과', data);
 
-    setLike(data.isLike)
+    setLike(data.isLike);
+    setLikeCount(data.likecount);
   }
 
   // 좋아요 초기 상태 가져오기
@@ -32,7 +31,6 @@ export default function PostLike({ postid }) {
       try {
         const res = await fetch(`http://localhost:5000/api/posts/like/status?post_id=${postid}&user_id=${state.user?.id}`);
         const data = await res.json();
-        console.log('좋아요 상태', data);
         setLike(data.isLike);
         setLikeCount(data.likecount);
       } catch (error) {
