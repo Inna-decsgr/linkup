@@ -16,14 +16,14 @@ code {
     monospace;
 }
 
-.custom-pagination .swiper-pagination-bullet {
-  width: 6px;
-  height: 6px;
+.swiper-pagination-clickable .swiper-pagination-bullet {
+  width: 7px;
+  height: 7px;
   background-color: lightgray;
   opacity: 1;
 }
 
 /* 활성화된 (현재 슬라이드) 버튼 */
-.custom-pagination .swiper-pagination-bullet-active {
-  background-color: #3e93ee; /* 원하는 색상 */
+.swiper-pagination-bullet-active {
+  background-color: #3e93ee !important; /* 원하는 색상 */
 }
