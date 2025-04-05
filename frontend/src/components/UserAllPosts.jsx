@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 export default function UserAllPosts({ user_id, userid }) {
   const [allposts, setAllposts] = useState([]);
   const [multiple, setMultiple] = useState(false);
-  const userprofileimage = allposts ? allposts.map(p => p.firstimage && `http://localhost:5000/images/${p.firstimage}`) : '';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -12,8 +11,8 @@ export default function UserAllPosts({ user_id, userid }) {
       try {
         const res = await fetch(`http://localhost:5000/api/posts/${user_id}`);
         const data = await res.json();
+        console.log('게시물222', data);
         const hasMultipleImages = data.some(post => post.images?.length > 1);
-        console.log('222', hasMultipleImages);
         setMultiple(hasMultipleImages);
 
         const simplified = data.map(post => ({
@@ -37,9 +36,9 @@ export default function UserAllPosts({ user_id, userid }) {
   return (
     <div>
       <div className='grid grid-cols-3 gap-[10px] w-full'>
-        {allposts && allposts.map((p) =>(
+        {allposts && allposts.map((p) => (
           <button key={p.postid} onClick={handleMove} className='relative'>
-            <img src={userprofileimage} alt="첫번째 이미지" className='w-[160px] h-[280px] object-cover' />
+            <img src={ `http://localhost:5000/images/${p.firstimage}`} alt="첫번째 이미지" className='w-[160px] h-[280px] object-cover' />
             {multiple && <span className='absolute top-1 right-2'><i className="fa-solid fa-square text-white"></i></span>}
           </button>
         ))}
