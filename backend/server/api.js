@@ -431,7 +431,15 @@ router.post('/posts/like', async (req, res) => {
       [post_id, user_id]
     );
 
-    res.status(201).json({ isLike: true, data: rows[0] });
+    const [likes] = await dbPromise.query(
+      'SELECT * FROM likes WHERE post_id = ?',
+      [post_id]
+    )
+    const isLike = rows.length > 0;
+    const likecount = likes.length
+
+    res.status(200).json({ isLike, data: rows[0], likecount: likecount });
+
   } catch (err) {
     console.error('좋아요 추가 중 에러 발생', err);
     res.status(500).json({message: '서버 오류'})
@@ -443,8 +451,6 @@ router.post('/posts/like', async (req, res) => {
 // 📌 로그인한 사용자가 해당 포스트에 좋아요를 눌렀는지 안눌렀는지 조회
 router.get('/posts/like/status', async (req, res) => {
   const { post_id, user_id } = req.query;
-  console.log('좋아요할 포스트 아이디', post_id);
-  console.log('좋아요하는 사용자 아이디', user_id);
 
   if (!post_id || !user_id) {
     return res.status(400).json({ message: '필수 정보가 부족합니다.' });
@@ -510,12 +516,15 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
   try {
     // 1. 해당 사용자가 팔로우한 사용자들의 id 가져오기
     const [followedUsers] = await dbPromise.query(
-      'SELECT follower_id FROM followers WHERE following_id = ?',
+      `SELECT follower_id FROM followers WHERE following_id = ?`,
       [userid]
     );
 
-    const followedIds = followedUsers.map(user => user.follower_id);
-    console.log('내가 팔로우한 사람들 아이디', followedIds);
+    const followedIds = followedUsers.map(user => user.follower_id); // 팔로우하는 사용자들의 id만 따로 모아서 저장
+    followedIds.push(Number(userid)); // 내 게시물도 함께 가져올거라서 userid도 push
+    const placeholders = followedIds.map(() => '?').join(', ');  // followedIds를 map, join해서 placeholders라는 변수에 배열 형태로 다시 저장 => "?, ?, ?" 즉, [2, 1] 형태로 배열에 저장됨
+    console.log('팔로우 아이디들', followedIds);
+    
 
     if (followedIds.length === 0) {
       return res.status(200).json({ posts: [] });  // 팔로우한 사람이 없으면 빈 배열 반환
@@ -526,13 +535,13 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
       `SELECT p.id, p.user_id, p.content, u.userid, p.created_at, u.profile_image
         FROM posts p
         JOIN users u ON p.user_id = u.id
-        WHERE p.user_id = ?`,
-      [followedIds]
+        WHERE p.user_id IN (${placeholders})
+        ORDER BY p.created_at DESC`,
+      // 원래 ? 는 하나의 값씩 비교하는데 IN은 여러개의 값을 비교한 후 하나만 해당해도 그 값을 가져오게 되어있음 그래서 ? 를 쓰는게 아니라 map, join으로 비교할 배열을 하나 생성해서 IN 조건절에 넣어주면 됨. 그리고 이때 followedIds를 []로 감싸게 되면 배열의 값들이 문자열 하나로 묶여버리기 때문에 감싸지 않고 전달해야함. 위와 같이 코드를 해야 ? 자리에 배열의 요소들이 하나씩 매칭돼서 IN (2,1)처럼 동작하게 됨
+      followedIds
     );
-    console.log('게시물 결과', posts);
 
     const postIds = posts.map(post => post.id);
-    console.log('포스트 아이디', postIds);
 
     const [taggedUser] = await dbPromise.query(
       `SELECT pt.post_id, u.id AS user_id, u.userid
@@ -541,13 +550,11 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
         WHERE pt.post_id IN (?)`,
       [postIds]
     );
-    console.log('태그된 사람', taggedUser);
 
     // 이미지 정보 가져오기
     const [images] = await dbPromise.query(
       `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
     );
-    console.log('선택된 이미지들', images);
 
     // posts 배열에 tagged_users, images 추가
     const postResults = posts.map(post => {
@@ -565,7 +572,6 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
         images: imgs
       };
     });
-    console.log('최종 결과물', postResults);
     
     res.status(200).json({ postResults });
   } catch (err) {
