@@ -18,6 +18,24 @@ export default function DisplayPost({ post }) {
     console.log('삭제할 포스트 아이디', postid);
   }
 
+  const paginationRef = useRef(null);  // bullet이 붙을 DOM 위치를 가리킴
+  const swiperRef = useRef(null);   // Swiper 인스턴스를 위한 별도 ref
+  useEffect(() => {
+    // useEffect로 DOM이 준비된 뒤에 bullet 직접 수동으로 붙이기
+    if (
+      paginationRef.current &&
+      swiperRef.current &&
+      swiperRef.current.params.pagination &&
+      typeof swiperRef.current.params.pagination !== 'boolean'
+    ) {
+      swiperRef.current.params.pagination.el = paginationRef.current;
+      swiperRef.current.pagination.init();  // bullet 초기화
+      swiperRef.current.pagination.render();  // bullet DOM 생성
+      swiperRef.current.pagination.update(); // bullet 위치 및 상태 업데이트
+      swiperRef.current.update();  // 전체 swiper 다시 렌더링(중)
+    }
+  }, [post.images]);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (settingRef.current && !settingRef.current.contains(e.target)) {
@@ -57,15 +75,22 @@ export default function DisplayPost({ post }) {
           <Swiper
             slidesPerView={1}
             modules={[Pagination]}
-            pagination={{clickable: true, el: '.custom-pagination'}}
+            pagination={{
+              clickable: true,
+              el: null,  // 초기에는 DOM이 없는 시점에서 swiper를 실행하니까 pagination.el = paginationRef.current 하면 오류가 남. 그래서 먼저 null로 두고 나중에 수동 연결해주기
+              type: 'bullets',
+            }}
+            onSwiper={(swiper) => { // swiper가 처음 실행될 때 내부 기능 전체를 이 ref에 담아두기
+              swiperRef.current = swiper
+            }}
           >
           {post.images.map((img, index) => (
             <SwiperSlide key={index}>
               <img src={`http://localhost:5000/images/${img}`} alt={`게시한 이미지 ${index}`} />
             </SwiperSlide>
           ))}
+          <div ref={paginationRef} style={{ textAlign: 'center' }} />
           </Swiper>
-          <div className="custom-pagination" style={{ textAlign: 'center' }}></div>
         </div>
         <div className='flex'>
           <div>
