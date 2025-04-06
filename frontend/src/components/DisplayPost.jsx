@@ -103,12 +103,12 @@ export default function DisplayPost({ post }) {
             <span>38</span>
           </div>
         </div>
-        <div>
-          <p>님 외 여러명이 좋아합니다</p>
-          <div className='flex'>
-            <p>{post.userid}</p>
-            <p>{post.content}</p>
-          </div>
+        {post.likedByFollowers && (
+          <p>{post.firstLikedUser}님 외 여러명이 좋아합니다</p>
+        )}
+        <div className='flex'>
+          <p>{post.userid}</p>
+          <p>{post.content}</p>
         </div>
         <div>
           <p>(팔로우 하는 사람중에 댓글 쓴 사람의 아이디와 댓글 내용)</p>
