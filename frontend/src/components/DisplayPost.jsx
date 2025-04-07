@@ -6,11 +6,13 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import { formatDate } from '../utils/Dateformat';
 import PostLike from '../components/PostLike';
+import PostComments from './PostComments';
 
 
 export default function DisplayPost({ post }) {
   const navigate = useNavigate();
   const [showsetting, setShowSetting] = useState(false);
+  const [showcomments, setShowComments] = useState(false);
   const settingRef = useRef(null);
   const userprofileimage = post.profile_image === 'default_profile.png' ? `/images/default_profile.png`
     : `http://localhost:5000/images/${post.profile_image}`;
@@ -97,11 +99,16 @@ export default function DisplayPost({ post }) {
             <PostLike postid={post.id} />
           </div>
           <div>
-            <button>
+            <button onClick={() => setShowComments(prev => !prev)}>
               <i className="fa-regular fa-comment"></i>
             </button>
             <span>38</span>
           </div>
+          {showcomments && (
+            <div>
+              <PostComments post={post} />
+            </div>
+          )}
         </div>
         {post.likedByFollowers && (
           <p>{post.firstLikedUser}님 외 여러명이 좋아합니다</p>
