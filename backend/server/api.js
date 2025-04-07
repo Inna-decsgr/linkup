@@ -606,4 +606,42 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
 
 
 
+// 해당 게시글에 댓글 추가하기
+router.post('/posts/comments', async (req, res) => {
+  const { postid, userid, comment } = req.body;
+  console.log('댓글을 달 포스트 아이디', postid);
+  console.log('댓글 작성한 사용자 아이디', userid);
+  console.log('댓글 내용', comment);
+
+  if (!postid || !userid || !comment) {
+    return res.status(400).json({ message: '필수 정보가 부족합니다.' });
+  }
+
+  try {
+    // comments 테이블에 post_id, user_id, content, created_at 생성해서 넣기
+    await dbPromise.query(
+      `INSERT INTO comments (post_id, user_id, content, created_at) VALUES (?, ?, ?, NOW())`,
+      [postid, userid, comment]
+    );
+
+    const [comments] = await dbPromise.query(
+      `SELECT c.*, u.username, u.profile_image 
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        WHERE c.post_id = ? AND c.user_id = ?
+        ORDER BY c.created_at DESC
+        LIMIT 1`,
+      [postid, userid]
+    );
+
+    res.status(200).json({ data: comments });
+  } catch (err) {
+    console.error('댓글 추가 중 에러 발생', err);
+    res.status(500).json({message: '서버 오류'})
+  }
+});
+
+
+
+
 module.exports = router; // 라우터 내보내기
