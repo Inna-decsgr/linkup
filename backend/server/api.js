@@ -641,7 +641,27 @@ router.post('/posts/comments', async (req, res) => {
   }
 });
 
+// 해당 포스터에 달린 모든 댓글들 가져와서 보여주기
+router.get('/posts/comments/:postid', async (req, res) => {
+  const { postid } = req.params;
+  console.log('댓글 조회할 포스터 아이디', postid);
 
+  try {
+    const [comments] = await dbPromise.query(
+      `SELECT c.*, u.username, u.userid, u.profile_image 
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        WHERE c.post_id = ?
+        ORDER BY c.created_at DESC`,
+      [postid]
+    );
+
+    res.status(200).json({ comments });
+  } catch (error) {
+    console.error('댓글 조회 오류', error);
+    res.status(500).json({ message: '서버 오류' });
+  }
+})
 
 
 module.exports = router; // 라우터 내보내기
