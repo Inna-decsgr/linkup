@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { formatDate } from '../utils/Dateformat';
 
@@ -34,16 +34,16 @@ export default function PostComments({ post }) {
   const handleComment = (e) => {
     setComment(e.target.value);
   }
-  const fetchAllComments = async () => {
+  const fetchAllComments = useCallback(async () => {
     const res = await fetch(`http://localhost:5000/api/posts/comments/${post.id}`)
     const data = await res.json();
     console.log('모든 댓글 조회', data);
     setAllComments(data.comments);
-  }
+  }, [post.id])  // useCallback은 함수가 의존하는 값(post.id)이 바뀌면 그에 따라 함수도 새로 생성되도록 해주기 때문에 의존성 배열 꼭 추가해주기
 
   useEffect(() => {
     fetchAllComments();
-  }, [])
+  }, [fetchAllComments])  // fetchAllComments 함수가 컴포넌트 내부에 정의되어 있기 때문에 리액트는 이 함수가 재생성될 수 있다고 봄. 그래서 의존성 배열에 넣어야함. 하지만 거의 대부분 이 함수가 매번 바뀌지는 않기 때문 무조건 의존성에 넣을 필요는 없지만 경고가 발생할 수는 있음.
 
   return (
     <div>
