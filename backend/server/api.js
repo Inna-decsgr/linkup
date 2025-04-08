@@ -683,4 +683,63 @@ router.get('/posts/comments/:postid', async (req, res) => {
 })
 
 
+
+// 게시글 수정하고 업데이트하기
+router.post('/posts/detail/edit', upload.array('images'), async (req, res) => {
+  // upload.array('images') // ← multer가 formData의 'images' 필드들을 받음
+  try {
+    const { postid, content } = req.body;
+    const files = req.files;
+
+    // 파일명 추출
+    // multer가 이미지 파일을 자동 처리해주는데 이때 path, originalname, filename 등이 있는데 우리는 이 중에서 file.filename만 사용함
+    const filenames = files.map(file => file.filename);
+
+    // 1. 게시물 내용 업데이트
+    await dbPromise.query(
+      `UPDATE posts SET content = ? WHERE id = ?`,
+      [content, postid]
+    );
+
+    // 2. 기존 이미지 모두 삭제
+    await dbPromise.query(
+      `DELETE FROM post_images WHERE post_id = ?`,
+      [postid]
+    );
+
+    // 3. 새 이미지를 다시 insert
+    for (const filename of filenames) {
+      await dbPromise.query(
+        `INSERT INTO post_images (post_id, image_url) VALUES (?, ?)`,
+        [postid, filename]
+      );
+    }
+
+    // 4. 업데이트된 게시글 다시 조회해서 전달
+    const [posts] = await dbPromise.query(
+      `
+        SELECT p.id, p.content, u.userid, u.profile_image
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.id =?
+      `,
+      [postid]
+    );
+    const [imagesRows] = await dbPromise.query(
+      `SELECT image_url FROM post_images WHERE post_id = ?`,
+      [postid]
+    );
+    const updatedPost = {
+      ...posts[0],
+      images: imagesRows.map(row => row.image_url)
+    };
+
+    res.status(200).json({post: updatedPost})
+  } catch (error) {
+    console.error('게시글 수정 에러:', error);
+    res.status(500).json({ message: '서버 오류로 게시글 수정에 실패했습니다.' });
+  }
+})
+
+
 module.exports = router; // 라우터 내보내기
