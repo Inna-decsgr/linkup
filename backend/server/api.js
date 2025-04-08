@@ -548,13 +548,31 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
         WHERE l.post_id = p.id AND l.user_id IN (${placeholders}) AND l.user_id != p.user_id
       ) AS likedByFollowers,
       (
-        SELECT uu.userid
+        SELECT JSON_OBJECT(
+          'userid', uu.userid,
+          'profile_image', uu.profile_image
+        )
         FROM likes l
         JOIN users uu ON l.user_id = uu.id
         WHERE l.post_id = p.id AND l.user_id IN (${placeholders}) AND l.user_id != p.user_id
         ORDER BY l.created_at DESC
         LIMIT 1
-      ) AS firstLikedUser
+      ) AS firstLikedUser,
+      (
+        SELECT JSON_OBJECT(
+          'id', c.id,
+          'content', c.content,
+          'created_at', c.created_at,
+          'user_id', c.user_id,
+          'userid', uu.userid,
+          'profile_image', uu.profile_image
+        )
+        FROM comments c
+        JOIN users uu ON c.user_id = uu.id
+        WHERE c.post_id = p.id AND c.user_id IN (${placeholders}) AND c.user_id != p.user_id
+        ORDER BY c.created_at DESC
+        LIMIT 1
+      )AS firstComment
         FROM posts p
         JOIN users u ON p.user_id = u.id
         WHERE p.user_id IN (${placeholders}) 
@@ -562,8 +580,9 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
       // GROUP_CONCAT(uu.userid SEPARATOR ', ') 여러 개의 값을 하나의 문자열로 합쳐주는 함수. 영희, 철수, 민수가 좋아요를 눌렀다면 "영희, 철수, 민수"처럼 쉼표로 연결된 하나의 문자열로 나옴. SEPARATOR는 각 값 사이에 어떻게 연결하지 정하는 것.
       // likes 테이블에서 해당 게시글(p.id)에 좋아요를 누른 사람들 중, 내가 팔로우한 사람들만 골라서 그들의 userid를 GROUP_CONCAT으로 모아줌. AS likedByFollowers는 별칭 정리하자면 각 게시물에 대해 내가 팔로우한 사람들 중 누가 좋아요를 눌렀는지 그 사람들의 userid를 하나의 문자열로 합쳐서 보여줘!
       // 원래 ? 는 하나의 값씩 비교하는데 IN은 여러개의 값을 비교한 후 하나만 해당해도 그 값을 가져오게 되어있음 그래서 ? 를 쓰는게 아니라 map, join으로 비교할 배열을 하나 생성해서 IN 조건절에 넣어주면 됨. 그리고 이때 followedIds를 []로 감싸게 되면 배열의 값들이 문자열 하나로 묶여버리기 때문에 감싸지 않고 전달해야함. 위와 같이 코드를 해야 ? 자리에 배열의 요소들이 하나씩 매칭돼서 IN (2,1)처럼 동작하게 됨
-      [...followedIds, ...followedIds, ...followedIds]
+      [...followedIds, ...followedIds, ...followedIds, ...followedIds]
     );
+    console.log('게시글 조회', posts);
 
     const postIds = posts.map(post => post.id);
 
