@@ -111,14 +111,22 @@ export default function DisplayPost({ post }) {
           )}
         </div>
         {post.likedByFollowers && (
-          <p>{post.firstLikedUser}님 외 여러명이 좋아합니다</p>
+          <div className='flex items-center'>
+            <img src={post.firstLikedUser.profile_image === 'default_profile.png' ? `/images/default_profile.png` : `http://localhost:5000/images/${post.firstLikedUser.profile_image}`} alt="사용자 프로필 이미지" className='w-[20px] h-[20px] object-cover rounded-full' />
+            <p className='text-sm pl-1'>{post.firstLikedUser.userid}님 외 여러명이 좋아합니다</p>
+          </div>
         )}
         <div className='flex'>
           <p>{post.userid}</p>
           <p>{post.content}</p>
         </div>
         <div>
-          <p>(팔로우 하는 사람중에 댓글 쓴 사람의 아이디와 댓글 내용)</p>
+          {post.firstComment && (
+            <div className='flex items-center'>
+              <p className='font-semibold'>{post.firstComment.userid}</p>
+              <p className='text-sm pl-1'>{post.firstComment.content}</p>
+            </div>
+          )}
         </div>
         <div>
           {post.tagged_users.map(((u, index) => (
