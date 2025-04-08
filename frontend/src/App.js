@@ -7,10 +7,12 @@ import Signup from './pages/Signup';
 import { AuthProvider } from './context/AuthContext';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import UserSetting from './pages/UserSetting';
-import UserSearch from './pages/UserSearch';
+import SearchPage from './pages/SearchPage';
 import NewPost from './pages/NewPost';
 import PostDetails from './pages/PostDetails';
 import ProfilePage from './pages/ProfilePage';
+import UserPosts from './pages/UserPosts';
+import EditPost from './pages/EditPost';
 
 
 
@@ -25,11 +27,13 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/profile/:userid" element={<ProfilePage />} />
+              <Route path="/profile/:userid/:user_id" element={<ProfilePage />} />
+              <Route path="/profile/:userid/:user_id/posts" element={<UserPosts />} />
               <Route path="/settings" element={<UserSetting />} />
-              <Route path="/search" element={<UserSearch />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/newpost" element={<NewPost />} />
               <Route path="/newpost/details" element={<PostDetails />} />
+              <Route path="/post/details/edit" element={<EditPost />} />
             </Routes>
           </div>
         </Router>
