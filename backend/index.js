@@ -6,7 +6,8 @@ const apiRoutes = require("./server/api");
 const path = require('path');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 app.use(cors());
 
 // 📌 MySQL 연결 설정
