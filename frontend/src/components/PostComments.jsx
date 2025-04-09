@@ -51,15 +51,22 @@ export default function PostComments({ post }) {
         <p className='text-center pt-3'>댓글</p>
         {allcomments && allcomments.map((comment) => {
           return (
-            <div key={comment.id} className='flex items-center py-3'>
-              <img src={comment.profile_image === 'default_profile.png' ? `/images/default_profile.png`: `http://localhost:5000/images/${comment.profile_image}`} alt="사용자 프로필 이미지" className='w-[35px] h-[35px] object-cover rounded-full' />
-              <div className='text-sm pl-2'>
-                <div className='flex items-center'>
-                  <p>{comment.userid}</p>
-                  <p className='text-xs pl-1 text-gray-500'>{formatDate(comment.created_at)}</p>
+            <div key={comment.id} className='flex justify-between items-center'>
+              <div className='flex items-center py-3'>
+                <img src={comment.profile_image === 'default_profile.png' ? `/images/default_profile.png`: `http://localhost:5000/images/${comment.profile_image}`} alt="사용자 프로필 이미지" className='w-[35px] h-[35px] object-cover rounded-full' />
+                <div className='text-sm pl-2'>
+                  <div className='flex items-center'>
+                    <p>{comment.userid}</p>
+                    <p className='text-xs pl-1 text-gray-500'>{formatDate(comment.created_at)}</p>
+                  </div>
+                  <p>{comment.content}</p>
                 </div>
-                <p>{comment.content}</p>
               </div>
+              {state.user?.id === comment.user_id && (
+                <div>
+                  <button className='border border-black py-1 px-2 text-xs'>수정</button>
+                </div>
+              )}
             </div>
           )
         })}
