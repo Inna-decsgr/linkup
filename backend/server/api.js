@@ -742,4 +742,28 @@ router.post('/posts/detail/edit', upload.array('images'), async (req, res) => {
 })
 
 
+// 특정 포스트 삭제하기
+router.delete('/posts/delete/:postid', async (req, res) => {
+  const { postid } = req.params;
+  console.log('삭제할 포스트 아이디', postid);
+
+  try {
+    const [result] = await dbPromise.query(
+      `DELETE FROM posts WHERE id = ?`,
+      [postid]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: '해당 게시글이 존재하지 않습니다.' });
+    }
+    
+    res.status(200).json({ message: '게시글이 성공적으로 삭제되었습니다.' });
+
+  } catch (error) {
+    console.error('게시글 삭제 에러', error);
+    res.status(500).json({ message: '서버 오류로 게시글 삭제에 실패했습니다.' });
+  }
+})
+
+
 module.exports = router; // 라우터 내보내기
