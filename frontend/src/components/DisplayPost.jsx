@@ -15,6 +15,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
   const [showcomments, setShowComments] = useState(false);
   const [postdelete, setPostDelete] = useState(false);
   const settingRef = useRef(null);
+  const commentRef = useRef(null);
   const userprofileimage = post.profile_image === 'default_profile.png' ? `/images/default_profile.png`
     : `http://localhost:5000/images/${post.profile_image}`;
   
@@ -48,16 +49,25 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (settingRef.current && !settingRef.current.contains(e.target)) {
-        setShowSetting(false);  // 바깥 영역 클릭 시 닫기
-      }
+      setTimeout(() => {
+        if (settingRef.current && !settingRef.current.contains(e.target)) {
+          setShowSetting(false);  // 바깥 영역 클릭 시 닫기
+        }
+        if (commentRef.current && !commentRef.current.contains(e.target)) {
+          if (showcomments) {
+            setShowComments(false);
+          }
+        }
+      }, 0)
     };
 
     document.addEventListener('click', handleClickOutside);
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, []);
+  }, [showcomments]);
+  // showcomments는 리액트의 상태값(state)이고, 지금 useEffect 안에서는 최초 렌더링 당시의 showcomments 값만 바라보고 있기 때문에 이 이후에 값이 바뀌어도 무시되면서 관련 기능들이 동작하지 않을 수 있음. 리액트가 항상 초기값(false)만 기억하고 있어서 나중에 true로 바뀌어도 useEffect안의 showcomments는 반응을 하지 못해서 닫히는 기능이 동작을 안함
+  // showcomments를 의존성 배열에 추가해주면 showcomments 상태 값이 바뀔 때마다 useEffect를 다시 실행하게 되고 최신 상태값을 기준으로 외부 클릭 감지를 해주기 때문에 잘 동작할 것
 
 
   return (
@@ -135,13 +145,13 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
             <PostLike postid={post.id} />
           </div>
           <div>
-            <button onClick={() => setShowComments(prev => !prev)}>
+            <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
               <i className="fa-regular fa-comment"></i>
             </button>
             <span>38</span>
           </div>
           {showcomments && (
-            <div>
+            <div ref={commentRef}>
               <PostComments post={post} />
             </div>
           )}
