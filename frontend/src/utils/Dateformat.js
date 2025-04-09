@@ -9,8 +9,10 @@ export function formatDate(inputDate) {
   const days = Math.floor(hours / 24);
   const weeks = Math.floor(days / 7);
 
-  if (minutes < 60) {
-    return `${minutes}분`;
+  if (seconds < 60) {
+    return `방금`;
+  } else if (minutes < 60) {
+    return `${minutes}분`
   } else if (hours < 24) {
     return `${hours}시간`;
   } else if (days === 1) {
