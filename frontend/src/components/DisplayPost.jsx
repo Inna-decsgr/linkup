@@ -9,15 +9,23 @@ import PostLike from '../components/PostLike';
 import PostComments from './PostComments';
 
 
-export default function DisplayPost({ post }) {
+export default function DisplayPost({ post, fetchFollowersPost }) {
   const navigate = useNavigate();
   const [showsetting, setShowSetting] = useState(false);
   const [showcomments, setShowComments] = useState(false);
+  const [postdelete, setPostDelete] = useState(false);
   const settingRef = useRef(null);
   const userprofileimage = post.profile_image === 'default_profile.png' ? `/images/default_profile.png`
     : `http://localhost:5000/images/${post.profile_image}`;
-  const handleRemove = (postid) => {
+  
+  const handleRemove = async (postid) => {
     console.log('삭제할 포스트 아이디', postid);
+    const res = await fetch(`http://localhost:5000/api/posts/delete/${post.id}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    console.log('포스트 삭제', data);
+    fetchFollowersPost();
   }
 
   const paginationRef = useRef(null);  // bullet이 붙을 DOM 위치를 가리킴
@@ -68,11 +76,39 @@ export default function DisplayPost({ post }) {
           </div>
           {showsetting && (
             <div className='absolute top-[50px] right-[-20px] bg-red-100 z-10 p-4 text-center text-sm'>
-              <button onClick={() => {console.log('편집');}}>편집</button><br/>
-              <button onClick={() => handleRemove(post.id)}>삭제</button>
+              <div>
+                <button>
+                  <i className="fa-regular fa-window-restore"></i>
+                  <span>저장</span>
+                </button>
+              </div>
+              <div>
+                <button>
+                  <i className="fa-solid fa-heart-crack"></i>
+                  <span>좋아요 수 숨기기</span>
+                </button>
+              </div>
+              <div>
+                <button>
+                  <i className="fa-solid fa-ban"></i>
+                  <span>공유 횟수 숨기기</span>
+                </button>
+              </div>
+              <div>
+                <button onClick={() => navigate('/post/details/edit', {state: {post}})}>
+                  <i className="fa-solid fa-pen"></i>
+                  <span>수정</span>
+                </button>
+              </div>
+              <div>
+                <button onClick={() => setPostDelete(true)}>
+                  <i className="fa-solid fa-trash"></i>
+                  <span>삭제</span>
+                </button>
+              </div>
             </div>
           )}
-        </div>
+          </div>
         <div>
           <Swiper
             slidesPerView={1}
@@ -133,6 +169,16 @@ export default function DisplayPost({ post }) {
             <button key={index} onClick={() => navigate(`/profile/${u.userid}`)}>@{u.userid}</button>
           )))}
         </div>
+        {postdelete && (
+          <div className='bg-red-100 p-2 text-xs w-[300px]'>
+            <p>게시물을 삭제하시겠어요?</p>
+            <p>계정 설정에서 30일 이내에 이 게시물을 복원할 수 있습니다. 이후에는 게시물이 영구적으로 삭제되며, 이 게시물
+              의 전체 또는 일부가 사용된 릴스, 게시물 및 스토리도 모두 삭제됩니다. 게시물을 복원하면 해당 콘텐츠도 복원됩니다.
+            </p>
+            <button onClick={() => handleRemove(post.id)}>삭제</button>
+            <button onClick={() => setPostDelete(false)}>취소</button>
+          </div>
+        )}
       </div>
     </div>
   );
