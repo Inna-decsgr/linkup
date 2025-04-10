@@ -77,6 +77,17 @@ export default function PostComments({ post, fetchFollowersPost }) {
     console.log(newValue);
   }
 
+  const handleRemove = async (commentid) => {
+    console.log('삭제하려는 댓글 아이디', commentid);
+    const res = await fetch(`http://localhost:5000/api/posts/comments/delete/${commentid}`, {
+      method: 'DELETE'
+    })
+    const data = await res.json();
+    console.log('댓글 삭제 완료', data);
+    fetchAllComments();
+    fetchFollowersPost();
+  }
+
   useEffect(() => {
     fetchAllComments();
   }, [fetchAllComments])  // fetchAllComments 함수가 컴포넌트 내부에 정의되어 있기 때문에 리액트는 이 함수가 재생성될 수 있다고 봄. 그래서 의존성 배열에 넣어야함. 하지만 거의 대부분 이 함수가 매번 바뀌지는 않기 때문 무조건 의존성에 넣을 필요는 없지만 경고가 발생할 수는 있음.
@@ -126,6 +137,7 @@ export default function PostComments({ post, fetchFollowersPost }) {
                   >
                     {editCommentId === comment.id ? '완료' : '수정'}
                   </button>
+                  <button onClick={() => handleRemove(comment.id)} className='border border-black py-1 px-2 text-xs ml-2'>삭제</button>
                 </div>
               )}
             </div>
