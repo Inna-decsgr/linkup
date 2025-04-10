@@ -148,11 +148,11 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
             <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
               <i className="fa-regular fa-comment"></i>
             </button>
-            <span>38</span>
+            <span>{post.commentCount}</span>
           </div>
           {showcomments && (
             <div ref={commentRef}>
-              <PostComments post={post} />
+              <PostComments post={post} fetchFollowersPost={fetchFollowersPost} />
             </div>
           )}
         </div>
