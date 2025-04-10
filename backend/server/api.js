@@ -572,7 +572,12 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
         WHERE c.post_id = p.id AND c.user_id IN (${placeholders}) AND c.user_id != p.user_id
         ORDER BY c.created_at DESC
         LIMIT 1
-      )AS firstComment
+      )AS firstComment,
+      (
+        SELECT COUNT(*)
+        FROM comments c
+        WHERE c.post_id = p.id
+      ) AS commentCount
         FROM posts p
         JOIN users u ON p.user_id = u.id
         WHERE p.user_id IN (${placeholders}) 
