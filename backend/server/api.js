@@ -771,4 +771,36 @@ router.delete('/posts/delete/:postid', async (req, res) => {
 })
 
 
+
+// 특정 댓글 수정하기
+router.put('/posts/comments/edit', async (req, res) => {
+  const { commentid, content } = req.body;
+  console.log('수정할 댓글 아이디', commentid);
+  console.log('댓글 내용', content);
+
+  try {
+    if (content) {
+      await dbPromise.query(
+        `UPDATE comments SET content = ?, isEdit = 1, created_at = NOW() WHERE id = ?`,
+        [content, commentid]
+      );
+    }
+
+    // 수정된 댓글 정보 다시 조회
+    const [updated] = await dbPromise.query(
+      'SELECT id, post_id, user_id, content, created_at, isEdit FROM comments WHERE id = ?',
+      [commentid]
+    );
+
+    return res.status(200).json(updated[0]);
+  } catch (error) {
+    console.error('댓글 수정 에러', error);
+    res.status(500).json({ message: '서버 오류로 댓글 수정에 실패했습니다.' })
+  }
+});
+
+
+
+
+
 module.exports = router; // 라우터 내보내기
