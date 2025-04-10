@@ -800,6 +800,24 @@ router.put('/posts/comments/edit', async (req, res) => {
 });
 
 
+router.delete('/posts/comments/delete/:commentid', async (req, res) => {
+  const { commentid } = req.params;
+  console.log('삭제하려는 댓글 아이디', commentid);
+
+  try {
+    await dbPromise.query(
+      `DELETE FROM comments WHERE id = ?`,
+      [commentid]
+    );
+
+    return res.status(200).json({message: '댓글을 삭제했습니다.'});
+  } catch (error) {
+    console.error('댓글 삭제 에러', error);
+    res.status(500).json({ message: '서버 오류로 댓글 삭제에 실패했습니다.' })
+  }
+})
+
+
 
 
 
