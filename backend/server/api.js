@@ -328,12 +328,13 @@ router.post('/newpost', upload.array('images'), async (req, res) => {
 
 
 
-// 해당 사용자가 게시한 모든 포스트들 불러오기
+// 사용자 관련 모든 포스트들 불러오기
 router.get('/posts/:userid', async (req, res) => {
   const { userid } = req.params;
   console.log("요청 들어온 userid:", userid);
 
   try {
+    // 사용자가 작성한 게시물들 관련 정보 모두 가져오기
     const [posts] = await dbPromise.query(
       `SELECT p.id, p.user_id, p.content, u.userid, p.created_at, u.profile_image
         FROM posts p
@@ -346,7 +347,7 @@ router.get('/posts/:userid', async (req, res) => {
       return res.status(200).json([]);
     } 
 
-    // 각 게시물에 태그된 사용자 정보와 이미지 가져오기
+    // 사용자가 작성한 각 게시물에 태그된 사용자 정보와 이미지 가져오기
     const postIds = posts.map(post => post.id);
     console.log('포스트 아이디', postIds);
 
@@ -357,14 +358,42 @@ router.get('/posts/:userid', async (req, res) => {
         WHERE pt.post_id IN (?)`,
       [postIds]
     );
-
     console.log('태그된 사람', taggedUser);
-
-    // 이미지 정보 가져오기
     const [images] = await dbPromise.query(
       `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
     );
     console.log('선택된 이미지들', images);
+
+
+
+    // 사용자가 북마크한 게시물들 가져오기
+    const [bookmarkedPosts] = await dbPromise.query(
+      `SELECT p.id, p.user_id, p.content, u.userid, p.created_at, u.profile_image
+        FROM bookmarks b
+        JOIN posts p ON b.post_id = p.id
+        JOIN users u ON p.user_id = u.id
+        WHERE b.user_id = ?`,
+      [userid]
+    );
+    console.log('사용자가 북마크한 게시물들', bookmarkedPosts);
+
+    const bookmarkedPostIds = bookmarkedPosts.map(post => post.id);  // 북마크한 게시물들의 아이디만 가져와서 저장
+
+    // 사용자가 북마크한 게시물들의 게시물 이미지 가져오기
+    const [bookmarkedImages] = await dbPromise.query(
+      `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`,
+      [bookmarkedPostIds]
+    );
+    const enrichedBookmarkedPosts = bookmarkedPosts.map(post => {
+      const imgs = bookmarkedImages
+        .filter(img => img.post_id === post.id)
+        .map(img => img.image_url);
+      
+      return {
+        ...post,
+        images: imgs
+      };
+    });
 
     // posts 배열에 tagged_users, images 추가
     const postResults = posts.map(post => {
@@ -376,6 +405,7 @@ router.get('/posts/:userid', async (req, res) => {
         .filter(img => img.post_id === post.id)
         .map(img => img.image_url);
       
+      
       return {
         ...post,
         tagged_users: tagged,
@@ -384,7 +414,7 @@ router.get('/posts/:userid', async (req, res) => {
     });
 
     //console.log('최종 반환 포스트 데이터', postResults);
-    res.status(200).json(postResults);
+    res.status(200).json({postResults, bookmarkedPosts: enrichedBookmarkedPosts});
 
   } catch (error) {
     res.status(500).json({message: "게시글 조회 실패"})
