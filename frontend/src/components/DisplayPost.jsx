@@ -7,6 +7,7 @@ import 'swiper/css/pagination';
 import { formatDate } from '../utils/Dateformat';
 import PostLike from '../components/PostLike';
 import PostComments from './PostComments';
+import PostBookmark from './PostBookmark';
 
 
 export default function DisplayPost({ post, fetchFollowersPost }) {
@@ -140,21 +141,26 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
           <div ref={paginationRef} style={{ textAlign: 'center' }} />
           </Swiper>
         </div>
-        <div className='flex'>
-          <div>
-            <PostLike postid={post.id} />
-          </div>
-          <div>
-            <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
-              <i className="fa-regular fa-comment"></i>
-            </button>
-            <span>{post.commentCount}</span>
-          </div>
-          {showcomments && (
-            <div ref={commentRef}>
-              <PostComments post={post} fetchFollowersPost={fetchFollowersPost} />
+        <div className='flex justify-between'>
+          <div className='flex'>
+            <div>
+              <PostLike postid={post.id} />
             </div>
-          )}
+            <div>
+              <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
+                <i className="fa-regular fa-comment"></i>
+              </button>
+              <span>{post.commentCount}</span>
+            </div>
+            {showcomments && (
+              <div ref={commentRef}>
+                <PostComments post={post} fetchFollowersPost={fetchFollowersPost} />
+              </div>
+            )}
+          </div>
+          <div>
+            <PostBookmark post={post} />
+          </div>
         </div>
         {post.likedByFollowers && (
           <div className='flex items-center'>
