@@ -587,7 +587,7 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
       // 원래 ? 는 하나의 값씩 비교하는데 IN은 여러개의 값을 비교한 후 하나만 해당해도 그 값을 가져오게 되어있음 그래서 ? 를 쓰는게 아니라 map, join으로 비교할 배열을 하나 생성해서 IN 조건절에 넣어주면 됨. 그리고 이때 followedIds를 []로 감싸게 되면 배열의 값들이 문자열 하나로 묶여버리기 때문에 감싸지 않고 전달해야함. 위와 같이 코드를 해야 ? 자리에 배열의 요소들이 하나씩 매칭돼서 IN (2,1)처럼 동작하게 됨
       [...followedIds, ...followedIds, ...followedIds, ...followedIds]
     );
-    console.log('게시글 조회', posts);
+    //console.log('게시글 조회', posts);
 
     const postIds = posts.map(post => post.id);
 
@@ -817,6 +817,51 @@ router.delete('/posts/comments/delete/:commentid', async (req, res) => {
   }
 })
 
+
+// 📌 해당 포스트를 사용자가 저장한 포스트에 추가하기(북마크 기능)
+router.post('/posts/users/bookmarks', async (req, res) => {
+  const { postid, userid } = req.query;
+  console.log('북마크할 포스트 아이디', postid);
+  console.log('북마크하는 사용자 아이디', userid);
+
+  if (!postid || !userid) {
+    return res.status(400).json({ message: '필수 정보가 부족합니다.' });
+  }
+
+  try {
+    // 현재 북마크 상태인지 아닌지 살펴보기
+    const [existing] = await dbPromise.query(
+      `SELECT * FROM bookmarks WHERE user_id =? AND post_id = ?`,
+      [userid, postid]
+    )
+
+    if (existing.length > 0) {
+      // 이미 북마크한 상태라면 북마크 해제
+      await dbPromise.query(
+        `DELETE FROM bookmarks WHERE user_id = ? AND post_id = ?`,
+        [userid, postid]
+      );
+    } else {
+      await dbPromise.query(
+        `INSERT INTO bookmarks (user_id, post_id, created_at) VALUES(?, ?, NOW())`,
+        [userid, postid]
+      );
+    }
+
+    // 해당 사용자의 북마크된 post_id 목록 반환
+    const [bookmarkList] = await dbPromise.query(
+      `SELECT post_id FROM bookmarks WHERE user_id = ?`,
+      [userid]
+    );
+
+    const bookmarkedPostIds = bookmarkList.map(row => row.post_id);
+    
+    return res.status(200).json({bookmarkedPostIds});
+  } catch (err) {
+    console.error('북마크 처리 중 에러 발생', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
 
 
 
