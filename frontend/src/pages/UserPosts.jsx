@@ -15,7 +15,7 @@ export default function UserPosts() {
       try {
         const res = await fetch(`http://localhost:5000/api/posts/${user_id}`);
         const data = await res.json();
-        setAllposts(data);
+        setAllposts(data.postResults);
       } catch (err) {
         console.error('게시물 조회 중 오류 발생', err);
       }

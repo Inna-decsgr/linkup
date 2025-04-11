@@ -46,7 +46,7 @@ export default function PostLike({ postid }) {
       <button onClick={toggleLike}>
         <i className={`fa-${like ? 'solid' : 'regular'} fa-heart`}></i>
       </button>
-      {likecount && (
+      {Number(likecount) > 0 && (
         <span>{likecount}</span>
       )}
     </div>
