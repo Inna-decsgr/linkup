@@ -131,11 +131,13 @@ export default function UserProfile({ user, isMe }) {
             <i className="fa-solid fa-camera-retro text-xl"></i>
           </span>
         </button>
-        <button className='basis-1/2' onClick={() => setActiveSection('bookmarks')}>
-          <span className={`inline-block px-3 ${activeSection === 'bookmarks' ? 'border-b-2 border-black' : 'border-b-2 border-transparent'}`}>
-            <i className="fa-regular fa-bookmark text-xl"></i>
-          </span>
-        </button>
+        {state.user?.userid === user?.userid && (
+          <button className='basis-1/2' onClick={() => setActiveSection('bookmarks')}>
+            <span className={`inline-block px-3 ${activeSection === 'bookmarks' ? 'border-b-2 border-black' : 'border-b-2 border-transparent'}`}>
+              <i className="fa-regular fa-bookmark text-xl"></i>
+            </span>
+          </button>
+        )}
         <button className='basis-1/2' onClick={() => setActiveSection('userinfo')}>
           <span className={`inline-block px-3 ${activeSection === 'userinfo' ? 'border-b-2 border-black' : 'border-b-2 border-transparent'}`}>
             <i className="fa-regular fa-user text-xl"></i>
