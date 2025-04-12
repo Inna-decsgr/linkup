@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function PostBookmark({ post }) {
@@ -19,6 +19,13 @@ export default function PostBookmark({ post }) {
 
     console.log('포스트 저장 완료', data);
   }
+
+  useEffect(() => {
+    if (post.isBookmarked === 1) {
+      setPostBookmark(prev => 
+        prev.includes(post.id) ? prev : [...prev, post.id])
+    }
+  }, [post.isBookmarked, post.id])
 
   return (
     <div>
