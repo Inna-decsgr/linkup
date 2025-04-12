@@ -75,7 +75,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
     <div>
       <div key={post.id}>
         <div className='flex justify-between items-center relative'>
-          <div className='flex items-center'>
+          <div className='flex items-center cursor-pointer' onClick={() => navigate(`/profile/${post.userid}/${post.user_id}`)}>
             <img src={userprofileimage} alt="사용자 프로필 이미지" className='w-[50px] h-[50px] object-cover rounded-full' />
             <p>{post.userid}</p>
             <p className='pl-4'>{formatDate(post.created_at)}</p>
@@ -87,12 +87,6 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
           </div>
           {showsetting && (
             <div className='absolute top-[50px] right-[-20px] bg-red-100 z-10 p-4 text-center text-sm'>
-              <div>
-                <button>
-                  <i className="fa-regular fa-window-restore"></i>
-                  <span>저장</span>
-                </button>
-              </div>
               <div>
                 <button>
                   <i className="fa-solid fa-heart-crack"></i>
