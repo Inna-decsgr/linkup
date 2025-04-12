@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 export default function PostFollowing() {
-  const { state } = useAuth();
-  const { user_id } = useParams();
+  const { user_id, username } = useParams();
   const [postcount, setPostCount] = useState(null);
   const [followerscount, setFollowersCount] = useState(null);
   const [followingscount, setFollowingsCount] = useState(null);
@@ -28,7 +26,7 @@ export default function PostFollowing() {
     <div>
       <div>
         <div>
-          <p className='font-bold text-sm mb-2'>{state.user?.username}</p>
+          <p className='font-bold text-sm mb-2'>{username}</p>
         </div>
         <div className='flex gap-10'>
           <div>
