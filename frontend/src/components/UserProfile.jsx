@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Button from './ui/Button';
 import UserAllPosts from './UserAllPosts';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import PostFollowing from './PostFollowing';
 
 
@@ -10,6 +10,7 @@ import PostFollowing from './PostFollowing';
 export default function UserProfile({ user, isMe }) {
   const { state } = useAuth();
   // 이때 state는 로그인한 사용자, props로 전달받은 정보는 다른 사용자에 대한 정보, 팔로우 정보 표시할 때 사용
+  const {user_id} = useParams();
   const navigate = useNavigate();
   const [isFollowing, setIsFollowing] = useState(false);  // 팔로잉 여부
   const [activeSection, setActiveSection] = useState('posts');  // 컴포넌트 섹션 상태
@@ -43,7 +44,7 @@ export default function UserProfile({ user, isMe }) {
   useEffect(() => {
     const fetchUserPosts = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/posts/${state.user?.id}`);
+        const res = await fetch(`http://localhost:5000/api/posts/${user_id}`);
         const data = await res.json();
         console.log('게시물222', data);
         // 사용자가 작성한 게시물들 가져올 때 해당 게시물에 첨부된 이미지가 한장인지 여러장인지 판단
@@ -56,22 +57,24 @@ export default function UserProfile({ user, isMe }) {
           postid: post.id
         }));
         setAllposts(simplified);
-        console.log(`${state.user?.id}가 작성한 게시물들 조회하기`, simplified);
+        console.log(`${user_id}가 작성한 게시물들 조회하기`, simplified);
 
-        // 사용자가 북마크한 게시물들 가져와서 단순화한 다음 bookmarkedpost에 저장
-        const bookmarksimplified = data.bookmarkedPosts.map(post => ({
-          firstimage: post.images?.[0],
-          postid: post.id
-        }))
-        setBookmarkedPost(bookmarksimplified);
-        console.log('사용자가 북마크한 게시물 단순화 결과', bookmarksimplified);
+        if (state.user?.userid === user?.userid) {
+          // 사용자가 북마크한 게시물들 가져와서 단순화한 다음 bookmarkedpost에 저장
+          const bookmarksimplified = data.bookmarkedPosts.map(post => ({
+            firstimage: post.images?.[0],
+            postid: post.id
+          }))
+          setBookmarkedPost(bookmarksimplified);
+          console.log('사용자가 북마크한 게시물 단순화 결과', bookmarksimplified);
+        }
       } catch (err) {
         console.error('게시물 조회 중 오류 발생', err);
       }
     };
 
     fetchUserPosts();
-  }, [state.user?.id, state.user?.userid]);
+  }, [state.user?.id, state.user?.userid, user?.userid, user_id]);
   
 
   const toggleFollow = async () => {
