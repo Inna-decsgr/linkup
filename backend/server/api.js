@@ -380,10 +380,17 @@ router.get('/posts/:userid', async (req, res) => {
     const bookmarkedPostIds = bookmarkedPosts.map(post => post.id);  // 북마크한 게시물들의 아이디만 가져와서 저장
 
     // 사용자가 북마크한 게시물들의 게시물 이미지 가져오기
-    const [bookmarkedImages] = await dbPromise.query(
-      `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`,
-      [bookmarkedPostIds]
-    );
+    let bookmarkedImages = [];  // bookmarkedImages를 재할당해야하니까 처음 정의할 때는 let으로
+    if (bookmarkedPostIds.length > 0) {
+      // 북마크한 포스트가 없는 상태에서 bookmarkedImages 를 쿼리하려고 하면 IN (?)에 빈 배열이 들어가서 MYSQL 쿼리 문제가 발생할 수 있음.
+      [bookmarkedImages] = await dbPromise.query(
+        `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`,
+        [bookmarkedPostIds]
+      );
+    } else {
+      bookmarkedImages = [];  // 초기화
+    }
+    
     const enrichedBookmarkedPosts = bookmarkedPosts.map(post => {
       const imgs = bookmarkedImages
         .filter(img => img.post_id === post.id)
@@ -413,7 +420,7 @@ router.get('/posts/:userid', async (req, res) => {
       };
     });
 
-    //console.log('최종 반환 포스트 데이터', postResults);
+    console.log('최종 반환 포스트 데이터', postResults);
     res.status(200).json({postResults, bookmarkedPosts: enrichedBookmarkedPosts});
 
   } catch (error) {
@@ -570,7 +577,7 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
 
     // 2. 팔로우한 사람들이 작성한 게시물들 가져오기
     const [posts] = await dbPromise.query(
-      `SELECT p.id, p.user_id, p.content, u.userid, p.created_at, u.profile_image,
+      `SELECT p.id, p.user_id, p.content, u.userid, u.username, p.created_at, u.profile_image,
       (
         SELECT GROUP_CONCAT(uu.userid SEPARATOR ', ')
         FROM likes l
