@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-export default function PostLike({ postid }) {
+export default function PostLike({ postid, showlikecount }) {
   const { state } = useAuth();
   const [like, setLike] = useState(false);
   const [likecount, setLikeCount] = useState(null);
@@ -46,7 +46,7 @@ export default function PostLike({ postid }) {
       <button onClick={toggleLike}>
         <i className={`fa-${like ? 'solid' : 'regular'} fa-heart`}></i>
       </button>
-      {Number(likecount) > 0 && (
+      {Number(likecount) > 0 && showlikecount && (
         <span>{likecount}</span>
       )}
     </div>
