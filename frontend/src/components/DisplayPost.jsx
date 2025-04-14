@@ -15,6 +15,10 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
   const [showsetting, setShowSetting] = useState(false);
   const [showcomments, setShowComments] = useState(false);
   const [postdelete, setPostDelete] = useState(false);
+  const [showlikecount, setShowLikeCount] = useState(() => {
+    const status = localStorage.getItem('showlikecount');
+    return status === 'true';  // 문자열로 저장되기 때문에 비교 필수!
+  });
   const settingRef = useRef(null);
   const commentRef = useRef(null);
   const userprofileimage = post.profile_image === 'default_profile.png' ? `/images/default_profile.png`
@@ -32,6 +36,14 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
 
   const paginationRef = useRef(null);  // bullet이 붙을 DOM 위치를 가리킴
   const swiperRef = useRef(null);   // Swiper 인스턴스를 위한 별도 ref
+
+  const handleShowLikeCount = () => {
+    setShowLikeCount((prev) => {
+      localStorage.setItem('showlikecount', !prev);
+      return !prev;
+    });
+  }
+
   useEffect(() => {
     // useEffect로 DOM이 준비된 뒤에 bullet 직접 수동으로 붙이기
     if (
@@ -88,9 +100,9 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
           {showsetting && (
             <div className='absolute top-[50px] right-[-20px] bg-red-100 z-10 p-4 text-center text-sm'>
               <div>
-                <button>
+                <button onClick={handleShowLikeCount}>
                   <i className="fa-solid fa-heart-crack"></i>
-                  <span>좋아요 수 숨기기</span>
+                  <span>{showlikecount ? '좋아요 수 숨기기' : '좋아요 수 보이기'}</span>
                 </button>
               </div>
               <div>
@@ -138,7 +150,8 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
         <div className='flex justify-between'>
           <div className='flex'>
             <div>
-              <PostLike postid={post.id} />
+              {showlikecount}
+              <PostLike postid={post.id} showlikecount={showlikecount} />
             </div>
             <div>
               <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
