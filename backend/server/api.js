@@ -20,14 +20,11 @@ router.post("/signup", async (req, res) => {
     const query = `
       INSERT INTO users (username, userid, email, telephone, password, created_at)
       VALUES (?, ?, ?, ?, ?, NOW())`;
-    db.query(query, [username, userid, email, telephone, hashedPassword], (err, result) => {
-      if (err) {
-        console.error("❌ 회원가입 실패:", err);
-        return res.status(500).json({ message: "회원가입 중 오류 발생" });
-      }
-      res.status(201).json({ message: "✅ 회원가입 성공!" });
-    });
-  } catch (error) {
+    
+    await dbPromise.query(query, [username, userid, email, telephone, hashedPassword])
+    
+    res.status(201).json({ message: "✅ 회원가입 성공!" });
+  }catch (error) {
     res.status(500).json({ message: "❌ 서버 오류 발생" });
   }
 });
