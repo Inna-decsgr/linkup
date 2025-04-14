@@ -8,7 +8,7 @@ import Button from './ui/Button';
 export default function Topbar() {
   const { state, dispatch } = useAuth();
   const navigate = useNavigate();
-  const profileImageUrl = state.user ? state.user.profile_image === 'default_profile.png'
+  const profileImageUrl = state.user ? (state.user.profile_image === 'default_profile.png' || state.user.profile_image === null)
   ? `/images/default_profile.png`
     : `http://localhost:5000/images/${state.user?.profile_image}`
   : '';

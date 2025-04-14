@@ -19,6 +19,7 @@ export default function AllPosts() {
     // useMemo는 계산 비용이 큰 연산을 최적화하고 싶을 때 사용하고 useCallback은 자식 컴포넌트에 함수를 props로 넘길 때 무한 렌더링 방지 등을 위함
     // useMemo의 결과는 어떤 값(숫자, 배열, 객체 등)을 나타내고 useCallback의 결과 타입은 함수 형태이다 그리고 둘 다 의존성 배열에 사용할 수 있음
     // useMemo는 값 계산이 무거워서 "이건 굳이 매번 다시 계산할 필요가 없겠는데?" 싶을 때 쓰면 좋음!
+    if (!userid) return;
     try {
       const res = await fetch(`http://localhost:5000/api/users/followers/posts/${userid}`);
       const data = await res.json();

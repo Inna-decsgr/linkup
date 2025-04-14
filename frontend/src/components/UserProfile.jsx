@@ -10,14 +10,14 @@ import PostFollowing from './PostFollowing';
 export default function UserProfile({ user, isMe }) {
   const { state } = useAuth();
   // 이때 state는 로그인한 사용자, props로 전달받은 정보는 다른 사용자에 대한 정보, 팔로우 정보 표시할 때 사용
-  const {user_id} = useParams();
+  const { user_id } = useParams();
   const navigate = useNavigate();
   const [isFollowing, setIsFollowing] = useState(false);  // 팔로잉 여부
   const [activeSection, setActiveSection] = useState('posts');  // 컴포넌트 섹션 상태
   const [allposts, setAllposts] = useState([]);  // 사용자가 작성한 모든 게시물 보여줄 때 넘겨주는 정보를 allposts에 저장
   const [multiple, setMultiple] = useState(false);  // 해당 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
   const [bookmarkedpost, setBookmarkedPost] = useState([]);  // 사용자가 북마크한 게시물들 보여줄 때 넘겨주는 정보를 bookmarkedpost에 저장
-  const profileImageUrl = user?.profile_image === 'default_profile.png'
+  const profileImageUrl = (user?.profile_image === 'default_profile.png' || user?.profile_image === null)
   ? `/images/default_profile.png`
     : `http://localhost:5000/images/${user?.profile_image}`;
   

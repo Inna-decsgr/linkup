@@ -6,7 +6,7 @@ import EditUserProfile from '../components/EditUserProfile';
 export default function UserSetting() {
   const { state } = useAuth();
   const [isEdit, setisEdit] = useState(false);
-  const profileImageUrl = state.user.profile_image === 'default_profile.png'
+  const profileImageUrl = (state.user.profile_image === 'default_profile.png' || state.user.profile_image === null)
   ? `/images/default_profile.png`
   : `http://localhost:5000/images/${state.user.profile_image}`;
 
