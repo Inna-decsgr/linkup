@@ -558,11 +558,13 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
   try {
     // 1. 해당 사용자가 팔로우한 사용자들의 id 가져오기
     const [followedUsers] = await dbPromise.query(
-      `SELECT follower_id FROM followers WHERE following_id = ?`,
+      `SELECT following_id FROM followers WHERE follower_id = ?`,
       [userid]
     );
+    // 내가 누군가를 팔로우하게 되면 팔로우 아이디가 내 아이디인 내역을 찾아야함
 
-    const followedIds = followedUsers.map(user => user.follower_id); // 팔로우하는 사용자들의 id만 따로 모아서 저장
+
+    const followedIds = followedUsers.map(user => user.following_id); // 팔로우하는 사용자들의 id만 따로 모아서 저장
     followedIds.push(Number(userid)); // 내 게시물도 함께 가져올거라서 userid도 push
     const placeholders = followedIds.map(() => '?').join(', ');  // followedIds를 map, join해서 placeholders라는 변수에 배열 형태로 다시 저장 => "?, ?, ?" 즉, [2, 1] 형태로 배열에 저장됨
     console.log('팔로우 아이디들', followedIds);
@@ -630,13 +632,14 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
     //console.log('게시글 조회', posts);
 
     const postIds = posts.map(post => post.id);
+    if (postIds.length === 0) return []; 
 
     const [taggedUser] = await dbPromise.query(
       `SELECT pt.post_id, u.id AS user_id, u.userid
         FROM post_tags pt
         JOIN users u ON pt.user_id = u.id
-        WHERE pt.post_id IN (?)`,
-      [postIds]
+        WHERE pt.post_id IN (${placeholders})`,
+      postIds
     );
 
     // 이미지 정보 가져오기
