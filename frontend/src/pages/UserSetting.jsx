@@ -11,7 +11,7 @@ export default function UserSetting() {
   : `http://localhost:5000/images/${state.user.profile_image}`;
 
   return (
-    <div>
+    <div className='w-[500px] mx-auto'>
       {!isEdit ? (
         <div className='flex justify-between'>
           <div>
@@ -19,7 +19,9 @@ export default function UserSetting() {
             <img src={profileImageUrl} alt="프로필 이미지" className='w-[100px] h-[100px] object-cover rounded-full'/>
             <p>아이디 : { state.user.userid }</p>
             <p>사용자 이름 : {state.user.username}</p>
-            <p>소개 : {state.user.bio}</p>
+            {state.user.bio && (
+              <p>소개 : {state.user.bio}</p>
+            )}
             <p>이메일 : {state.user.email}</p>
             <p>전화번호 : {state.user.telephone}</p>
           </div>
