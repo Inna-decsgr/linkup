@@ -349,7 +349,7 @@ router.get('/posts/:userid', async (req, res) => {
     console.log('포스트 아이디', postIds);
 
     const [taggedUser] = await dbPromise.query(
-      `SELECT pt.post_id, u.id AS user_id, u.userid
+      `SELECT pt.post_id, u.id AS user_id, u.userid, u.username
         FROM post_tags pt
         JOIN users u ON pt.user_id = u.id
         WHERE pt.post_id IN (?)`,
@@ -403,13 +403,13 @@ router.get('/posts/:userid', async (req, res) => {
     const postResults = posts.map(post => {
       const tagged = taggedUser
         .filter(t => t.post_id === post.id)
-        .map(t => ({ id: t.user_id, userid: t.userid }));
+        .map(t => ({ id: t.user_id, userid: t.userid, username: t.username }));
       
-      const imgs = images
+        
+        const imgs = images
         .filter(img => img.post_id === post.id)
         .map(img => img.image_url);
-      
-      
+        
       return {
         ...post,
         tagged_users: tagged,
@@ -635,7 +635,7 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
     if (postIds.length === 0) return []; 
 
     const [taggedUser] = await dbPromise.query(
-      `SELECT pt.post_id, u.id AS user_id, u.userid
+      `SELECT pt.post_id, u.id AS user_id, u.userid, u.username
         FROM post_tags pt
         JOIN users u ON pt.user_id = u.id
         WHERE pt.post_id IN (${placeholders})`,
@@ -651,7 +651,7 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
     const postResults = posts.map(post => {
       const tagged = taggedUser
         .filter(t => t.post_id === post.id)
-        .map(t => ({ id: t.user_id, userid: t.userid }));
+        .map(t => ({ id: t.user_id, userid: t.userid, username: t.username }));
       
       const imgs = images
         .filter(img => img.post_id === post.id)
