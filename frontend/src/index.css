@@ -27,3 +27,27 @@ code {
 .swiper-pagination-bullet-active {
   background-color: #3e93ee !important; /* 원하는 색상 */
 }
+
+
+
+/* 태그 말풍선 after*/
+.speech-bubble {
+  position: absolute;
+  background-color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-size: 11px;
+  transform: translate(-50%, -100%);
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -5px; /* 말풍선 아래로 */
+  left: 70%;
+  transform: rotate(45deg);
+  border-width: 5px;
+  border-style: solid;
+  border-color: white;
+}
