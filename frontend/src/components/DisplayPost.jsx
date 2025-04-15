@@ -140,9 +140,23 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
             }}
           >
           {post.images.map((img, index) => (
-            <SwiperSlide key={index}>
+            <SwiperSlide key={index} className='relative inline-block'>
               <img src={`http://localhost:5000/images/${img}`} alt={`게시한 이미지 ${index}`} />
-            </SwiperSlide>
+              <div className='bg-red-100'>
+                {post.tagged_users.map(((u, index) => {
+                  const randomTop = Math.floor(Math.random() * 70) + 10;  // 10~80%
+                  const randomLeft = Math.floor(Math.random() * 70) + 10; // 10~80%
+
+                  return (
+                    <div key={index} className='speech-bubble' style={{ top: `${randomTop}%`, left: `${randomLeft}%` }}>
+                      <button onClick={() => navigate(`/profile/${u.userid}/${u.id}/${u.username}`)}>
+                        @{u.userid}
+                      </button>
+                    </div>
+                  )
+                }))}
+              </div>
+            </SwiperSlide>  
           ))}
           <div ref={paginationRef} style={{ textAlign: 'center' }} />
           </Swiper>
@@ -171,7 +185,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
         </div>
         {post.likedByFollowers && (
           <div className='flex items-center'>
-            <img src={post.firstLikedUser.profile_image === 'default_profile.png' ? `/images/default_profile.png` : `http://localhost:5000/images/${post.firstLikedUser.profile_image}`} alt="사용자 프로필 이미지" className='w-[20px] h-[20px] object-cover rounded-full' />
+            <img src={(post.firstLikedUser.profile_image === 'default_profile.png' || post.firstLikedUser.profile_image === null) ? `/images/default_profile.png` : `http://localhost:5000/images/${post.firstLikedUser.profile_image}`} alt="사용자 프로필 이미지" className='w-[20px] h-[20px] object-cover rounded-full' />
             <p className='text-sm pl-1'>{post.firstLikedUser.userid}님 외 여러명이 좋아합니다</p>
           </div>
         )}
@@ -187,11 +201,6 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
             </div>
           )}
         </div>
-        <div>
-          {post.tagged_users.map(((u, index) => (
-            <button key={index} onClick={() => navigate(`/profile/${u.userid}`)}>@{u.userid}</button>
-          )))}
-        </div>
         {postdelete && (
           <div className='bg-red-100 p-2 text-xs w-[300px]'>
             <p>게시물을 삭제하시겠어요?</p>
@@ -206,4 +215,5 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
     </div>
   );
 }
+
 
