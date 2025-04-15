@@ -15,7 +15,8 @@ export default function UserProfile({ user, isMe }) {
   const [isFollowing, setIsFollowing] = useState(false);  // 팔로잉 여부
   const [activeSection, setActiveSection] = useState('posts');  // 컴포넌트 섹션 상태
   const [allposts, setAllposts] = useState([]);  // 사용자가 작성한 모든 게시물 보여줄 때 넘겨주는 정보를 allposts에 저장
-  const [multiple, setMultiple] = useState(false);  // 해당 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
+  const [postmultiple, setPostMultiple] = useState(false);  // 사용자가 작성한 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
+  const [bookmarkmultiple, setBookmarkMultiple] = useState(false);  // 사용자가 북마크한 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
   const [bookmarkedpost, setBookmarkedPost] = useState([]);  // 사용자가 북마크한 게시물들 보여줄 때 넘겨주는 정보를 bookmarkedpost에 저장
   const profileImageUrl = (user?.profile_image === 'default_profile.png' || user?.profile_image === null)
   ? `/images/default_profile.png`
@@ -48,19 +49,29 @@ export default function UserProfile({ user, isMe }) {
         const data = await res.json();
         console.log('게시물222', data);
         // 사용자가 작성한 게시물들 가져올 때 해당 게시물에 첨부된 이미지가 한장인지 여러장인지 판단
-        const hasMultipleImages = data.postResults.some(post => post.images?.length > 1);
-        setMultiple(hasMultipleImages);
+        
+        if (data.postResults.length > 0) {
+          console.log('333');
+          const hasMultipleImages = data.postResults.some(post => post.images?.length > 1);
+          console.log('사진 복수 여부', hasMultipleImages);
+          setPostMultiple(hasMultipleImages);
 
-        // 사용자가 작성한 게시물들 가져와서 단순화한 다음 allpost에 저장
-        const simplified = data.postResults.map(post => ({
-          firstimage: post.images?.[0],
-          postid: post.id
-        }));
-        setAllposts(simplified);
-        console.log(`${user_id}가 작성한 게시물들 조회하기`, simplified);
+          // 사용자가 작성한 게시물들 가져와서 단순화한 다음 allpost에 저장
+          const simplified = data.postResults.map(post => ({
+            firstimage: post.images?.[0],
+            postid: post.id
+          }));
+          setAllposts(simplified);
+          console.log(`${user_id}가 작성한 게시물들 조회하기`, simplified);
+        }
 
-        if (state.user?.userid === user?.userid) {
+        if (data.bookmarkedPosts.length > 0 && state.user?.userid === user?.userid) {
           // 사용자가 북마크한 게시물들 가져와서 단순화한 다음 bookmarkedpost에 저장
+          console.log('로그인한 사용자', state.user?.userid);
+          console.log('계정주', user?.userid);
+          const hasMultipleImages = data.bookmarkedPosts.some(post => post.images?.length > 1);
+          setBookmarkMultiple(hasMultipleImages);
+
           const bookmarksimplified = data.bookmarkedPosts.map(post => ({
             firstimage: post.images?.[0],
             postid: post.id
@@ -149,10 +160,10 @@ export default function UserProfile({ user, isMe }) {
       </div>
       <div className='w-[500px] mx-auto mt-5'>
         {activeSection === 'posts' && (
-          <UserAllPosts user_id={user?.id} userid={user?.userid} post={allposts} multiple={multiple}/>
+          <UserAllPosts user_id={user?.id} userid={user?.userid} post={allposts} multiple={postmultiple}/>
         )}
         {activeSection === 'bookmarks' && (
-          <UserAllPosts user_id={user?.id} userid={user?.userid} post={bookmarkedpost} multiple={multiple}/>
+          <UserAllPosts user_id={user?.id} userid={user?.userid} post={bookmarkedpost} multiple={bookmarkmultiple}/>
         )}
         {activeSection === 'userinfo' && (
           <p>사용자 정보 컴포넌트</p>
