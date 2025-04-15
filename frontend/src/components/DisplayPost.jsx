@@ -21,7 +21,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
   });
   const settingRef = useRef(null);
   const commentRef = useRef(null);
-  const userprofileimage = post.profile_image === 'default_profile.png' ? `/images/default_profile.png`
+  const userprofileimage = (post.profile_image === 'default_profile.png' || post.profile_image === null) ? `/images/default_profile.png`
     : `http://localhost:5000/images/${post.profile_image}`;
   
   const handleRemove = async (postid) => {
