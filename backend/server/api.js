@@ -336,7 +336,8 @@ router.get('/posts/:userid', async (req, res) => {
       `SELECT p.id, p.user_id, p.content, u.userid, p.created_at, u.profile_image
         FROM posts p
         JOIN users u ON p.user_id = u.id
-        WHERE p.user_id = ?`,
+        WHERE p.user_id = ?
+        ORDER BY p.created_at DESC`,
       [userid]
     )
     console.log('해당 사용자가 작성한 포스트 목록', posts);
@@ -369,7 +370,8 @@ router.get('/posts/:userid', async (req, res) => {
         FROM bookmarks b
         JOIN posts p ON b.post_id = p.id
         JOIN users u ON p.user_id = u.id
-        WHERE b.user_id = ?`,
+        WHERE b.user_id = ?
+        ORDER BY b.created_at DESC`,
       [userid]
     );
     console.log('사용자가 북마크한 게시물들', bookmarkedPosts);
