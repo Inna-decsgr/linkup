@@ -33,21 +33,24 @@ code {
 /* 태그 말풍선 after*/
 .speech-bubble {
   position: absolute;
-  background-color: white;
+  background: #1f1e1e;
+  opacity: 0.9;
   padding: 6px 10px;
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   font-size: 11px;
   transform: translate(-50%, -100%);
+  color: white;
 }
 
 .speech-bubble::after {
   content: '';
   position: absolute;
-  bottom: -5px; /* 말풍선 아래로 */
+  bottom: -4px;
   left: 70%;
+  width: 10px;
+  height: 10px;
+  background-color:inherit; /* 부모랑 같은 색 */
+  opacity: 0.9;
   transform: rotate(45deg);
-  border-width: 5px;
-  border-style: solid;
-  border-color: white;
 }
