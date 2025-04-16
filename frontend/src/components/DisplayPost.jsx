@@ -8,6 +8,7 @@ import { formatDate } from '../utils/Dateformat';
 import PostLike from '../components/PostLike';
 import PostComments from './PostComments';
 import PostBookmark from './PostBookmark';
+import { Imageformat } from '../utils/Imageformat';
 
 
 export default function DisplayPost({ post, fetchFollowersPost }) {
@@ -21,8 +22,6 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
   });
   const settingRef = useRef(null);
   const commentRef = useRef(null);
-  const userprofileimage = (post.profile_image === 'default_profile.png' || post.profile_image === null) ? `/images/default_profile.png`
-    : `http://localhost:5000/images/${post.profile_image}`;
   
   const handleRemove = async (postid) => {
     console.log('삭제할 포스트 아이디', postid);
@@ -88,7 +87,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
       <div key={post.id}>
         <div className='flex justify-between items-center relative'>
           <div className='flex items-center cursor-pointer' onClick={() => navigate(`/profile/${post.userid}/${post.user_id}/${post.username}`)}>
-            <img src={userprofileimage} alt="사용자 프로필 이미지" className='w-[50px] h-[50px] object-cover rounded-full' />
+            <img src={Imageformat(post.profile_image)} alt="사용자 프로필 이미지" className='w-[50px] h-[50px] object-cover rounded-full' />
             <p>{post.userid}</p>
             <p className='pl-4'>{formatDate(post.created_at)}</p>
           </div>
@@ -142,7 +141,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
           {post.images.map((img, index) => (
             <SwiperSlide key={index} className='relative inline-block'>
               <img src={`http://localhost:5000/images/${img}`} alt={`게시한 이미지 ${index}`} />
-              <div className='bg-red-100'>
+              <div>
                 {post.tagged_users.map(((u, index) => {
                   const randomTop = Math.floor(Math.random() * 70) + 10;  // 10~80%
                   const randomLeft = Math.floor(Math.random() * 70) + 10; // 10~80%
@@ -185,7 +184,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
         </div>
         {post.likedByFollowers && (
           <div className='flex items-center'>
-            <img src={(post.firstLikedUser.profile_image === 'default_profile.png' || post.firstLikedUser.profile_image === null) ? `/images/default_profile.png` : `http://localhost:5000/images/${post.firstLikedUser.profile_image}`} alt="사용자 프로필 이미지" className='w-[20px] h-[20px] object-cover rounded-full' />
+            <img src={Imageformat(post.firstLikedUser.profile_image)} alt="사용자 프로필 이미지" className='w-[20px] h-[20px] object-cover rounded-full' />
             <p className='text-sm pl-1'>{post.firstLikedUser.userid}님 외 여러명이 좋아합니다</p>
           </div>
         )}

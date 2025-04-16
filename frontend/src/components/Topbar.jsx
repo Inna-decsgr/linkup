@@ -3,15 +3,12 @@ import { Link } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from "react-router-dom";
 import Button from './ui/Button';
+import { Imageformat } from '../utils/Imageformat';
 
 
 export default function Topbar() {
   const { state, dispatch } = useAuth();
   const navigate = useNavigate();
-  const profileImageUrl = state.user ? (state.user.profile_image === 'default_profile.png' || state.user.profile_image === null)
-  ? `/images/default_profile.png`
-    : `http://localhost:5000/images/${state.user?.profile_image}`
-  : '';
 
 
   useEffect(() => {
@@ -36,7 +33,7 @@ export default function Topbar() {
             <Link to="/newpost"><i className="fa-solid fa-square-plus"></i></Link>
             <button onClick={() => navigate('/settings')}><i className="fa-solid fa-gear"></i></button>
             <Link to={`/profile/${state.user.userid}/${state.user.id}/${state.user.username}`}>
-              <img src={profileImageUrl} alt="프로필 이미지" className='w-[40px] h-[40px] object-cover rounded-full'/>
+              <img src={Imageformat(state.user.profile_image)} alt="프로필 이미지" className='w-[40px] h-[40px] object-cover rounded-full'/>
             </Link>
             <Button text="로그아웃" width="w-[100px]" onClick={handleLogout} />  
           </div>

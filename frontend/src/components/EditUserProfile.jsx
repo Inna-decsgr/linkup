@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Imageformat } from '../utils/Imageformat';
 
 
 export default function EditUserProfile({ user, setisEdit }) {
@@ -12,11 +13,7 @@ export default function EditUserProfile({ user, setisEdit }) {
     telephone: '',
     profile_image: user.profile_image || 'default_profile.png'
   });
-  const [previewImage, setPreviewImage] = useState(
-    user.profile_image === 'default_profile.png'
-      ? `/images/default_profile.png`
-      : `http://localhost:5000/images/${user.profile_image}`
-  );
+  const [previewImage, setPreviewImage] = useState(Imageformat(user.profile_image));
   const [selectedFile, setSelectedFile] = useState(null);  // 선택된 새 이미지
 
   const isChanged = () => {

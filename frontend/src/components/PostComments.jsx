@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { formatDate } from '../utils/Dateformat';
+import { Imageformat } from '../utils/Imageformat';
 
 
 export default function PostComments({ post, fetchFollowersPost }) {
@@ -9,8 +10,6 @@ export default function PostComments({ post, fetchFollowersPost }) {
   const [allcomments, setAllComments] = useState([]);  // 모든 댓글
   const [editCommentId, setEditCommentId] = useState(null);  // 편집할 댓글 아이디
   const [editContent, setEditContent] = useState({});  // 수정된 댓글 내용
-  const userprofileimage = state.user?.profile_image === 'default_profile.png' ? `/images/default_profile.png`
-    : `http://localhost:5000/images/${state.user?.profile_image}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -100,7 +99,7 @@ export default function PostComments({ post, fetchFollowersPost }) {
           return (
             <div key={comment.id} className='flex justify-between items-center'>
               <div className='flex items-center py-3'>
-                <img src={comment.profile_image === 'default_profile.png' ? `/images/default_profile.png`: `http://localhost:5000/images/${comment.profile_image}`} alt="사용자 프로필 이미지" className='w-[35px] h-[35px] object-cover rounded-full' />
+                <img src={Imageformat(comment.profile_image)} alt="사용자 프로필 이미지" className='w-[35px] h-[35px] object-cover rounded-full' />
                 <div className='text-sm pl-2'>
                   <div className='flex items-center'>
                     <p>{comment.userid}</p>
@@ -145,7 +144,7 @@ export default function PostComments({ post, fetchFollowersPost }) {
         })}
         <form onSubmit={handleSubmit} className='flex'>
           <div>
-            <img src={userprofileimage} alt="사용자 프로필 이미지" className='w-[40px] h-[40px] object-cover rounded-full'/>
+            <img src={Imageformat(state.user?.profile_image)} alt="사용자 프로필 이미지" className='w-[40px] h-[40px] object-cover rounded-full'/>
           </div>
           <input
             type="text"

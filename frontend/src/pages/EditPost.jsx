@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Imageformat } from '../utils/Imageformat';
 
 export default function EditPost() {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ export default function EditPost() {
       </div>
       <div>
         <div className='flex items-center'>
-          <img src={post.profile_image === 'default_profile.png' ? `/images/default_profile.png` : `http://localhost:5000/images/${post.profile_image}`} alt="사용자 프로필 이미지" className='w-[30px] h-[30px] object-cover rounded-full' />
+          <img src={Imageformat(post.profile_image)} alt="사용자 프로필 이미지" className='w-[30px] h-[30px] object-cover rounded-full' />
           <p>{post.userid}</p>
         </div>
 

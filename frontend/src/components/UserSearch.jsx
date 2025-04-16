@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
+import { Imageformat } from '../utils/Imageformat';
 
 
 
@@ -80,10 +81,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
             <div key={index} className='flex items-center justify-between'>
               <div className='flex cursor-pointer' onClick={() => navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}>
                 <div>
-                  <img src={user.profile_image === 'default_profile.png'
-                  ? '/images/default_profile.png'
-                  : `http://localhost:5000/images/${user.profile_image}`
-                  }
+                  <img src={Imageformat(user.profile_image)}
                   alt="프로필 이미지"
                   className="w-[50px] h-[50px] rounded-full object-cover"
                   />

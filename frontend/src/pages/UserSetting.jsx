@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import EditUserProfile from '../components/EditUserProfile';
+import { Imageformat } from '../utils/Imageformat';
 
 
 export default function UserSetting() {
   const { state } = useAuth();
   const [isEdit, setisEdit] = useState(false);
-  const profileImageUrl = (state.user.profile_image === 'default_profile.png' || state.user.profile_image === null)
-  ? `/images/default_profile.png`
-  : `http://localhost:5000/images/${state.user.profile_image}`;
 
   return (
     <div className='w-[500px] mx-auto'>
@@ -16,7 +14,7 @@ export default function UserSetting() {
         <div className='flex justify-between'>
           <div>
             <p>사용자 정보</p>
-            <img src={profileImageUrl} alt="프로필 이미지" className='w-[100px] h-[100px] object-cover rounded-full'/>
+            <img src={Imageformat(state.user.profile_image)} alt="프로필 이미지" className='w-[100px] h-[100px] object-cover rounded-full'/>
             <p>아이디 : { state.user.userid }</p>
             <p>사용자 이름 : {state.user.username}</p>
             {state.user.bio && (

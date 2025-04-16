@@ -4,6 +4,7 @@ import UserAllPosts from './UserAllPosts';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from "react-router-dom";
 import PostFollowing from './PostFollowing';
+import { Imageformat } from '../utils/Imageformat';
 
 
 
@@ -18,9 +19,6 @@ export default function UserProfile({ user, isMe }) {
   const [postmultiple, setPostMultiple] = useState(false);  // 사용자가 작성한 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
   const [bookmarkmultiple, setBookmarkMultiple] = useState(false);  // 사용자가 북마크한 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
   const [bookmarkedpost, setBookmarkedPost] = useState([]);  // 사용자가 북마크한 게시물들 보여줄 때 넘겨주는 정보를 bookmarkedpost에 저장
-  const profileImageUrl = (user?.profile_image === 'default_profile.png' || user?.profile_image === null)
-  ? `/images/default_profile.png`
-    : `http://localhost:5000/images/${user?.profile_image}`;
   
   useEffect(() => {
     const checkFollowStatus = async () => {
@@ -108,7 +106,7 @@ export default function UserProfile({ user, isMe }) {
       <div className='flex flex-col items-center'>
         <div className='flex items-center w-[500px] '>
           <div className='pr-[40px]'>
-            <img src={profileImageUrl} alt="프로필 이미지" className='w-[100px] h-[100px] object-cover rounded-full' />
+            <img src={Imageformat(user?.profile_image)} alt="프로필 이미지" className='w-[100px] h-[100px] object-cover rounded-full' />
           </div>
           <div>
             <PostFollowing />
