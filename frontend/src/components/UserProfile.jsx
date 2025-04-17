@@ -19,6 +19,7 @@ export default function UserProfile({ user, isMe }) {
   const [postmultiple, setPostMultiple] = useState(false);  // 사용자가 작성한 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
   const [bookmarkmultiple, setBookmarkMultiple] = useState(false);  // 사용자가 북마크한 게시물에 게시된 이미지가 한 장인지 여러장인지 구분하는 상태
   const [bookmarkedpost, setBookmarkedPost] = useState([]);  // 사용자가 북마크한 게시물들 보여줄 때 넘겨주는 정보를 bookmarkedpost에 저장
+  const [followerinfo, setFollowerInfo] = useState(null);
   
   useEffect(() => {
     const checkFollowStatus = async () => {
@@ -84,7 +85,27 @@ export default function UserProfile({ user, isMe }) {
 
     fetchUserPosts();
   }, [state.user?.id, state.user?.userid, user?.userid, user_id]);
-  
+
+
+  useEffect(() => {
+    const fetchFollowerInfo = async () => {
+      try {
+        console.log('2', state.user?.id);
+        console.log('3', user_id);
+        const res = await fetch(`http://localhost:5000/api/follower/info?userid=${state.user?.id}&user_id=${user_id}`);
+        const data = await res.json();
+        console.log('팔로우 관련 가져온 정보', data[0]?.mutualFollowerName);
+        setFollowerInfo({
+          userid: data[0]?.mutualFollowerName,
+          profile_image: data.mutuals?.[0]?.profile_image || null
+        });
+      } catch (err) {
+        console.error('팔로우 데이터 조회 중 오류 발생', err);
+      }
+    }
+
+    fetchFollowerInfo();
+  }, [state.user?.id, user_id])
 
   const toggleFollow = async () => {
     const response = await fetch('http://localhost:5000/api/follow', {
@@ -115,8 +136,13 @@ export default function UserProfile({ user, isMe }) {
       </div>
       <div className='w-[500px] mx-auto'>
         <p className='text-left font-medium mt-4'>@{user?.userid}</p>
-        <p className='mt-1 mb-3 text-xs'>{ user?.bio }</p>
-        <p>{ isFollowing}</p>
+        <p className='mt-1 mb-3 text-xs'>{user?.bio}</p>
+        {!isMe && followerinfo && (
+          <div className='flex items-center text-sm gap-2'>
+            <img src={Imageformat(followerinfo.profile_image)} alt="사용자 프로필" className="w-[35px] h-[35px] rounded-full object-cover"/>
+            <p><span className='font-bold'>{followerinfo.userid}</span>님이 팔로우합니다</p>
+          </div>
+        )}
         <div className='flex gap-2'>
           {isMe ? (
             <>
