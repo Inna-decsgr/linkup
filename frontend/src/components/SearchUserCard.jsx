@@ -25,7 +25,11 @@ export default function SearchUserCard({ user, history, setHistory }) {
         </div>
         <div>
           <p>{user.userid}</p>
-          <p>{user.username}</p>
+          {!history && user.mutualFollowerName ? (
+            <p className='text-xs text-gray-600'>{user.mutualFollowerName}님{user.mutualOthersCount === 0 ? '이 팔로우합니다' : ` 외 ${user.mutualOthersCount}명이 팔로우합니다`}</p>
+          ) : (
+            <p>{user.username}</p>
+          )}
         </div>
       </div>
       <div>
