@@ -22,7 +22,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
     if (!text.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/search?keyword=${encodeURIComponent(text)}&userid=${state.user?.userid}`);
+      const response = await fetch(`http://localhost:5000/api/search?keyword=${encodeURIComponent(text)}&user_id=${state.user?.id}&userid=${state.user?.userid}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -34,7 +34,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
     } catch (error) {
       console.error('서버 오류:', error);
     }
-  }, [state.user?.userid]);
+  }, [state.user?.id, state.user?.userid]);
 
 
   const handlenavigate = (user) => {
@@ -127,7 +127,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
           </div>
           <div>
             {history.map((user, index) => (
-              <div key={index}>
+              <div key={index} className='cursor-pointer' onClick={() => navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}>
                 <SearchUserCard user={user} history={true} setHistory={setHistory} />
               </div>
             ))}
