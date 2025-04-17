@@ -381,7 +381,6 @@ router.post('/newpost', upload.array('images'), async (req, res) => {
 // 사용자 관련 모든 포스트들 불러오기
 router.get('/posts/:userid', async (req, res) => {
   const { userid } = req.params;
-  console.log("요청 들어온 userid:", userid);
 
   try {
     // 사용자가 작성한 게시물들 관련 정보 모두 가져오기
@@ -393,14 +392,14 @@ router.get('/posts/:userid', async (req, res) => {
         ORDER BY p.created_at DESC`,
       [userid]
     )
-    console.log('해당 사용자가 작성한 포스트 목록', posts);
+    //console.log('해당 사용자가 작성한 포스트 목록', posts);
     if (posts.length === 0) {
       return res.status(200).json([]);
     } 
 
     // 사용자가 작성한 각 게시물에 태그된 사용자 정보와 이미지 가져오기
     const postIds = posts.map(post => post.id);
-    console.log('포스트 아이디', postIds);
+    //console.log('포스트 아이디', postIds);
 
     const [taggedUser] = await dbPromise.query(
       `SELECT pt.post_id, u.id AS user_id, u.userid, u.username
@@ -409,11 +408,11 @@ router.get('/posts/:userid', async (req, res) => {
         WHERE pt.post_id IN (?)`,
       [postIds]
     );
-    console.log('태그된 사람', taggedUser);
+    //console.log('태그된 사람', taggedUser);
     const [images] = await dbPromise.query(
       `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
     );
-    console.log('선택된 이미지들', images);
+    //console.log('선택된 이미지들', images);
 
 
 
@@ -427,7 +426,7 @@ router.get('/posts/:userid', async (req, res) => {
         ORDER BY b.created_at DESC`,
       [userid]
     );
-    console.log('사용자가 북마크한 게시물들', bookmarkedPosts);
+    //console.log('사용자가 북마크한 게시물들', bookmarkedPosts);
 
     const bookmarkedPostIds = bookmarkedPosts.map(post => post.id);  // 북마크한 게시물들의 아이디만 가져와서 저장
 
@@ -472,7 +471,7 @@ router.get('/posts/:userid', async (req, res) => {
       };
     });
 
-    console.log('최종 반환 포스트 데이터', postResults);
+    //console.log('최종 반환 포스트 데이터', postResults);
     res.status(200).json({postResults, bookmarkedPosts: enrichedBookmarkedPosts});
 
   } catch (error) {
@@ -964,6 +963,70 @@ router.post('/posts/users/bookmarks', async (req, res) => {
   }
 });
 
+
+// 내가 팔로우하는 사람중에 해당 계정을 팔로우하는 사람이 있는지 조회하기
+router.get('/follower/info', async (req, res) => {
+  const { userid, user_id } = req.query;
+  console.log('✅ 호출됨:', userid, user_id);
+  console.log('로그인한 사용자 id', userid);
+  console.log('해당 계정주의 id', user_id);
+
+  try {
+    // 내가 팔로우 중인 사람들=follower_id가 userid인 following_id인 사람들
+    const [myFollowing] = await dbPromise.query(
+      `SELECT following_id
+      FROM followers
+      WHERE follower_id = ?`,
+      [userid]
+    );
+    const myFollowingIds = myFollowing.map(row => row.following_id);
+    console.log('내가 팔로우하는 사람들 아이디', myFollowing);
+
+
+    if (myFollowingIds.length === 0) {
+      // 내가 팔로우하는 사람들이 없을 떄를 처리해주지 않으면 SQL문에서 IN () 에러가 나니까 꼭 필요함!
+      const enrichResults = myFollowing.map(user => ({
+        ...user,
+        mutualFollowerName: null,
+        mutualOthersCount: 0,
+      }));
+      return res.status(200).json(enrichResults);
+    }
+
+    const enrichResults = await Promise.all(
+      myFollowing.map(async (user) => {
+        const placeholders = myFollowingIds.map(() => '?').join(',');
+        console.log('333', myFollowingIds);
+        const [mutuals] = await dbPromise.query(
+          `SELECT DISTINCT u.userid, u.profile_image
+            FROM users u
+            JOIN followers f ON
+              (f.follower_id = u.id AND f.following_id = ?) OR  
+              (f.following_id = u.id AND f.follower_id = ?) 
+            WHERE u.id IN (${placeholders})`,  
+          [user_id, user_id, ...myFollowingIds]
+        );
+        console.log('겹치는 사람', mutuals);
+        const mutualCount = mutuals.length;
+        const mutualFollowerName = mutuals[0]?.userid || null;
+
+        return {
+          ...user,
+          mutuals,
+          mutualFollowerName,
+          mutualOthersCount: mutualCount > 1 ? mutualCount - 1 : 0,
+        };
+      })
+    );
+    console.log(`내가 팔로우하는 사람들 중 ${user_id} 사용자를 팔로우하는 사람들에 대한 데이터`, enrichResults);
+
+    return res.status(200).json(enrichResults);
+    
+  } catch (error) {
+    console.error("검색 실패:", error);
+    res.status(500).json({ message: "사용자 검색 중 오류 발생" });
+  }
+})
 
 
 
