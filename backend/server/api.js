@@ -155,19 +155,72 @@ router.get("/users", async (req, res) => {
 
 // 📌 검색한 userid로 사용자 조회
 router.get("/search", async (req, res) => {
-  const { keyword, userid } = req.query;
+  const { keyword, user_id, userid } = req.query;
   console.log('전달받은 사용자 id:', keyword); // ✅ 출력해서 확인 가능!
-  console.log('로그인한 사용자 id', userid);
+  console.log('로그인한 사용자 userid', userid);
+  console.log('로그인한 사용자 id', user_id);
 
   try {
-    const [users] = await dbPromise.query(
+    // 1. 검색 키워드에 해당하는 사용자들
+    const [searchResults] = await dbPromise.query(
       `SELECT id, username, userid, profile_image, bio
       FROM users 
       WHERE userid LIKE ? AND userid != ?`,
-      [`%${keyword}%`, userid]  // keyword가 포함된 userid 검색!
+      [`%${keyword}%`, userid]  // keyword가 포함된 userid를 가진 사용자들 중에서, 로그인한 사용자의 userid는 제외함
     );
+    console.log('검색 결과', searchResults);
 
-    return res.status(200).json(users);
+    // 2. 내가 팔로우 중인 사람들=follower_id가 userid인 following_id인 사람들
+    const [myFollowing] = await dbPromise.query(
+      `SELECT following_id
+      FROM followers
+      WHERE follower_id = ?`,
+      [user_id]
+    );
+    const myFollowingIds = myFollowing.map(row => row.following_id);
+    console.log('내가 팔로우하는 사람들 아이디', myFollowing);
+
+
+    if (myFollowingIds.length === 0) {
+      // 내가 팔로우하는 사람들이 없을 떄를 처리해주지 않으면 SQL문에서 IN () 에러가 나니까 꼭 필요함!
+      const enrichResults = searchResults.map(user => ({
+        ...user,
+        mutualFollowerName: null,
+        mutualOthersCount: 0,
+      }));
+      return res.status(200).json(enrichResults);
+    }
+
+    const enrichResults = await Promise.all(
+      searchResults.map(async (user) => {
+        // 3. 내가 팔로우하는 사람들이 검색한 유저를 팔로우하거나, 이 유저가 그들을 팔로우하는 경우
+        // myFollowingIds가 배열형태[3, 4, 7] 라서 "?, ?, ?" 이런 식으로 바꿔서 placeholders에 저장함
+        // placeholders에 따로 배열을 풀어서 저장하는 건 자바스크립트 배열을 SQL에 안전하게 넣는 트릭이라고 보면 됨
+        const placeholders = myFollowingIds.map(() => '?').join(',');
+        // 내가 팔로우하는 사람들 중에서 검색한 유저랑 팔로우 관계가 있는 사람들을 모두 가져옴
+        const [mutuals] = await dbPromise.query(
+          `SELECT DISTINCT u.userid -- 팔로우하는 사람들이 양방향으로 관계(맞팔 관계)가 있을 수도 있는데 그럼 중복이 됨. 중복 방지를 위함
+            FROM users u
+            JOIN followers f ON
+              (f.follower_id = u.id AND f.following_id = ?) OR  -- 내가 팔로우하는 사람들 중 검색한 사용자를 팔로우하거나
+              (f.following_id = u.id AND f.follower_id = ?) -- 내가 팔로우하는 사람들 중 검색한 유저가 팔로잉하는 사람의 경우만 가져옴
+            WHERE u.id IN (${placeholders})`,  // u.id는 항상 내가 팔로우하는 사람들 중 한 명임
+          [user.id, user.id, ...myFollowingIds]
+        );
+
+        const mutualCount = mutuals.length;
+        const mutualFollowerName = mutuals[0]?.userid || null;
+
+        return {
+          ...user,
+          mutualFollowerName,
+          mutualOthersCount: mutualCount > 1 ? mutualCount - 1 : 0,
+        };
+      })
+    );
+    console.log('내가 팔로우하는 사람들 중 검색한 사용자를 팔로우하거나 팔로잉하는 사람들에 대한 데이터', enrichResults);
+
+    return res.status(200).json(enrichResults);
     
   } catch (error) {
     console.error("검색 실패:", error);
@@ -530,15 +583,20 @@ router.get('/users/postfollowing/:user_id', async (req, res) => {
       'SELECT * FROM posts WHERE user_id = ?',
       [user_id]
     )
-    const [followings] = await dbPromise.query(
-      // 내가 누굴 팔로우했는가 following_id = 나의 id
-      // 팔로잉 목록(내가 팔로우한 사람들) => 내가 팔로우한 유저들(팔로잉)
+    // followers 테이블에서 follower_id는 팔로우를 '하는 사람'의 id이고 following_id는 팔로우를 '당하는 사람'의 id
+    // follower_id가 1이고 following_id가 2면 1이 2를 팔로우하는 관계 => 1의 팔로잉 목록에는 2가 있음 => 2의 팔로워 목록에는 1이 있음
+    // 즉 follower_id는 팔로우를 거는 사람(주체)
+    // following_id는 팔로우를 당하는 사람(대상)임을 기억하자
+
+    const [followers] = await dbPromise.query(
+      // 누가 나를 팔로우했는가 following_id = 나의 id
+      // 팔로워 목록(나를 팔로우한 사람들) => 나를 팔로우하는 유저들(팔로워)
       'SELECT * FROM followers WHERE following_id = ?',
       [user_id]
     )
-    const [followers] = await dbPromise.query(
-      // 누가 나를 팔로우했는가 follower_id = 나의 id
-      // 팔로워 목록(나를 팔로우한 사람들) => 나를 팔로우하는 유저들(팔로워)
+    const [followings] = await dbPromise.query(
+      // 내가 누굴 팔로우했는가 follower_id = 나의 id
+      // 팔로잉 목록(내가 팔로우하는 사람들) => 내가 팔로우한 유저들(팔로잉)
       'SELECT * FROM followers WHERE follower_id = ?',
       [user_id]
     );
