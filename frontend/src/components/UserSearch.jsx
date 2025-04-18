@@ -14,6 +14,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
   const [results, setResults] = useState([]);
   const { state } = useAuth();
 
+
   const handleChange = (e) => {
     setKeyword(e.target.value);
   }
@@ -38,25 +39,35 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
 
 
   const handlenavigate = (user) => {
-    // 기존 검색 기록 가져와서 중복 제거 후 filtered에 저장
-    const existing = JSON.parse(localStorage.getItem('searchhistory')) || [];
+    // 기존 전체 검색 기록 불러오기
+    const existingAll = JSON.parse(localStorage.getItem('searchhistory')) || {}
+    // 현재 사용자 id에 해당하는 기록만 가져오기
+    const existing = existingAll[state.user?.userid] || [];
+    console.log('로컬스토리지에서 해당 사용자 검색 기록 가져오기', existing);
+    // 중복 제거 후 filtered에 저장
     const filtered = existing.filter(item => item.userid !== user.userid);
     // 맨 앞에 새로 검색한 사용자 추가
     const updated = [user, ...filtered];
+    // 전체 기록에도 새로 추가된 검색 기록 업데이트
+    existingAll[state.user?.userid] = updated;
     // 새로 검색한 사용자가 포함된 updated 배열을 로컬 스토리지에 저장
-    localStorage.setItem('searchhistory', JSON.stringify(updated));
+    localStorage.setItem('searchhistory', JSON.stringify(existingAll));
     // 로컬스토리지에서 검색 기록 가져와서 stored에 저장 후 history 상태에 저장
-    const stored = JSON.parse(localStorage.getItem('searchhistory')) || [];
-    console.log('검색기록에 추가된 사용자', stored);
-    setHistory(stored);
+
+    console.log('검색기록 업데이트', updated);
+    setHistory(updated);
+
     navigate(`/profile/${user.userid}/${user.id}/${user.username}`)
   }
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('searchhistory')) || [];
+    if (!state.user?.userid) return;
+
+    const existingAll = JSON.parse(localStorage.getItem('searchhistory')) || {}
+    const stored = existingAll[state.user?.userid] || [];
+
     setHistory(stored);
-    console.log('검색 기록', stored);
-  }, []);
+  }, [state.user?.userid]);
 
 
 
