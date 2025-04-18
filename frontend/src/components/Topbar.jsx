@@ -26,7 +26,7 @@ export default function Topbar() {
   return (
     <header className='w-full bg-red-100 py-4 px-8 flex justify-center'>
       <div className='max-w-screen-xl w-full flex justify-between items-center'>
-        <Link to="/" className="mr-4"><span className='font-bold text-xl'>Linkup</span><p className='inline-block pl-2 font-semibold text-sm'>@{state.user && <span>{state.user.userid}</span>}</p></Link>
+        <Link to="/" className="mr-4"><span className='font-bold text-xl'>Linkup</span><p className='inline-block pl-2 font-semibold text-sm'>{state.user && <span>@{state.user.userid}</span>}</p></Link>
         {state.user ? (
           <div className='flex space-x-5 items-center'>
             <Link to="/search"><i className="fa-solid fa-magnifying-glass"></i></Link>

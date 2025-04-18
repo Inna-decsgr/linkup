@@ -97,7 +97,7 @@ router.post("/editprofile", upload.single('profile_image'), async (req, res) => 
   console.log('소개글:', bio);
   
 
-  if (!userid || !username || !bio || !email || !telephone) {
+  if (!userid || !username || !email || !telephone) {
     return res.status(400).json({ message: '빈 항목을 모두 입력해주세요.' });
   }
 
