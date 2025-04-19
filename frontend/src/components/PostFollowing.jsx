@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export default function PostFollowing() {
-  const { user_id, username } = useParams();
+  const { userid, user_id, username } = useParams();
   const [postcount, setPostCount] = useState(null);
   const [followerscount, setFollowersCount] = useState(null);
   const [followingscount, setFollowingsCount] = useState(null);
+  const navigate = useNavigate();
+
+  const handleNavigate = (followinfo) => {
+    navigate(`/${userid}/${user_id}/${username}/${followinfo}`)
+  }
   
 
   useEffect(() => {
@@ -33,11 +38,11 @@ export default function PostFollowing() {
             <p className='font-bold'>{postcount}</p>
             <p>게시물</p>
           </div>
-          <div>
+          <div onClick={() => { handleNavigate('follower') }} className='cursor-pointer'>
             <p className='font-bold'>{followerscount}</p>
             <p>팔로워</p>
           </div>
-          <div>
+          <div onClick={() => { handleNavigate('following') }} className='cursor-pointer'>
             <p className='font-bold'>{followingscount}</p>
             <p>팔로잉</p>
           </div>
