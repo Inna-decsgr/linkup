@@ -381,6 +381,7 @@ router.post('/newpost', upload.array('images'), async (req, res) => {
 // 사용자 관련 모든 포스트들 불러오기
 router.get('/posts/:userid', async (req, res) => {
   const { userid } = req.params;
+  console.log('가져올 사용자 정보', userid);
 
   try {
     // 사용자가 작성한 게시물들 관련 정보 모두 가져오기
@@ -392,29 +393,45 @@ router.get('/posts/:userid', async (req, res) => {
         ORDER BY p.created_at DESC`,
       [userid]
     )
-    //console.log('해당 사용자가 작성한 포스트 목록', posts);
-    if (posts.length === 0) {
-      return res.status(200).json([]);
-    } 
+    console.log('해당 사용자가 작성한 포스트 목록', posts);
 
-    // 사용자가 작성한 각 게시물에 태그된 사용자 정보와 이미지 가져오기
-    const postIds = posts.map(post => post.id);
-    //console.log('포스트 아이디', postIds);
+    let postResults = [];
 
-    const [taggedUser] = await dbPromise.query(
-      `SELECT pt.post_id, u.id AS user_id, u.userid, u.username
-        FROM post_tags pt
-        JOIN users u ON pt.user_id = u.id
-        WHERE pt.post_id IN (?)`,
-      [postIds]
-    );
-    //console.log('태그된 사람', taggedUser);
-    const [images] = await dbPromise.query(
-      `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
-    );
-    //console.log('선택된 이미지들', images);
+    if (posts.length > 0) {
+      // 사용자가 작성한 각 게시물에 태그된 사용자 정보와 이미지 가져오기
+      const postIds = posts.map(post => post.id);
+      console.log('포스트 아이디', postIds);
 
+      const [taggedUser] = await dbPromise.query(
+        `SELECT pt.post_id, u.id AS user_id, u.userid, u.username
+          FROM post_tags pt
+          JOIN users u ON pt.user_id = u.id
+          WHERE pt.post_id IN (?)`,
+        [postIds]
+      );
+      console.log('태그된 사람', taggedUser);
+      const [images] = await dbPromise.query(
+        `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
+      );
+      console.log('선택된 이미지들', images);
 
+      postResults = posts.map(post => {
+      const tagged = taggedUser
+        .filter(t => t.post_id === post.id)
+        .map(t => ({ id: t.user_id, userid: t.userid, username: t.username }));
+      
+        
+        const imgs = images
+        .filter(img => img.post_id === post.id)
+        .map(img => img.image_url);
+        
+        return {
+          ...post,
+          tagged_users: tagged,
+          images: imgs
+        };
+      });
+    }
 
     // 사용자가 북마크한 게시물들 가져오기
     const [bookmarkedPosts] = await dbPromise.query(
@@ -426,9 +443,11 @@ router.get('/posts/:userid', async (req, res) => {
         ORDER BY b.created_at DESC`,
       [userid]
     );
-    //console.log('사용자가 북마크한 게시물들', bookmarkedPosts);
+    console.log('사용자가 북마크한 게시물들', bookmarkedPosts);
 
     const bookmarkedPostIds = bookmarkedPosts.map(post => post.id);  // 북마크한 게시물들의 아이디만 가져와서 저장
+    console.log('사용자가 북마크한 게시물 아이디', bookmarkedPostIds);
+
 
     // 사용자가 북마크한 게시물들의 게시물 이미지 가져오기
     let bookmarkedImages = [];  // bookmarkedImages를 재할당해야하니까 처음 정의할 때는 let으로
@@ -438,8 +457,6 @@ router.get('/posts/:userid', async (req, res) => {
         `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`,
         [bookmarkedPostIds]
       );
-    } else {
-      bookmarkedImages = [];  // 초기화
     }
     
     const enrichedBookmarkedPosts = bookmarkedPosts.map(post => {
@@ -453,26 +470,12 @@ router.get('/posts/:userid', async (req, res) => {
       };
     });
 
-    // posts 배열에 tagged_users, images 추가
-    const postResults = posts.map(post => {
-      const tagged = taggedUser
-        .filter(t => t.post_id === post.id)
-        .map(t => ({ id: t.user_id, userid: t.userid, username: t.username }));
-      
-        
-        const imgs = images
-        .filter(img => img.post_id === post.id)
-        .map(img => img.image_url);
-        
-      return {
-        ...post,
-        tagged_users: tagged,
-        images: imgs
-      };
+    // 응답 보내기 (항상 사용자가 작성한 게시물과 북마크한 게시물 모두 다 포함되도록)
+    console.log('최종 반환 포스트 데이터', postResults);
+    res.status(200).json({
+      postResults,
+      bookmarkedPosts: enrichedBookmarkedPosts
     });
-
-    //console.log('최종 반환 포스트 데이터', postResults);
-    res.status(200).json({postResults, bookmarkedPosts: enrichedBookmarkedPosts});
 
   } catch (error) {
     res.status(500).json({message: "게시글 조회 실패"})
