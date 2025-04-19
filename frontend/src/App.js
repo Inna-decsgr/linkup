@@ -13,6 +13,7 @@ import PostDetails from './pages/PostDetails';
 import ProfilePage from './pages/ProfilePage';
 import UserPosts from './pages/UserPosts';
 import EditPost from './pages/EditPost';
+import FollowInfo from './pages/FollowInfo';
 
 
 
@@ -34,6 +35,7 @@ function App() {
               <Route path="/newpost" element={<NewPost />} />
               <Route path="/newpost/details" element={<PostDetails />} />
               <Route path="/post/details/edit" element={<EditPost />} />
+              <Route path="/:userid/:user_id/:username/:followerinfo" element={<FollowInfo />} />
             </Routes>
           </div>
         </Router>
