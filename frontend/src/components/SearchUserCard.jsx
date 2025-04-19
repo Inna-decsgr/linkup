@@ -1,19 +1,30 @@
 import React from 'react';
 import { Imageformat } from '../utils/Imageformat';
+import { useAuth } from '../context/AuthContext';
 
 
-export default function SearchUserCard({ user, history, setHistory }) {
+export default function SearchUserCard({ user, history, setHistory}) {
+  const { state } = useAuth();
+
   const RemoveHistory = () => {
+    const currentUserId = state.user?.userid;
+    if (!currentUserId) return;
+
     // 로컬스토리지에서 기존 검색기록 가져오기
-    const existing = JSON.parse(localStorage.getItem('searchhistory')) || [];
+    const existingAll = JSON.parse(localStorage.getItem('searchhistory')) || {};
+
+    // 현재 사용자 사용자 기록 중 user.id와 일치하지 않는 기록만 남기기
+    const existing = existingAll[currentUserId] || [];
     // user.id와 일치하지 않는 항목만 남기기
-    const updated = existing.filter(item => item.id !== user.id);
+    const filtered = existing.filter(item => item.userid !== user.userid);
 
-    // 로컬 스토리지에 다시 저장
-    localStorage.setItem('searchhistory', JSON.stringify(updated));
-    setHistory(updated);
+    // 필터링된 기록을 다시 사용자 아이디에 저장
+    existingAll[currentUserId] = filtered;
 
-    console.log('삭제된 후 검색 기록', updated);
+    // 로컬 스토리지에 전체 업데이트
+    localStorage.setItem('searchhistory', JSON.stringify(existingAll));
+    // 상태도 업데이트
+    setHistory(filtered);
   }
 
 
