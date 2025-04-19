@@ -38,7 +38,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
   }, [state.user?.id, state.user?.userid]);
 
 
-  const handlenavigate = (user) => {
+  const handlenavigate = ({user, isSelect}) => {
     // 기존 전체 검색 기록 불러오기
     const existingAll = JSON.parse(localStorage.getItem('searchhistory')) || {}
     // 현재 사용자 id에 해당하는 기록만 가져오기
@@ -57,7 +57,9 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
     console.log('검색기록 업데이트', updated);
     setHistory(updated);
 
-    navigate(`/profile/${user.userid}/${user.id}/${user.username}`)
+    if (!isSelect) {
+      navigate(`/profile/${user.userid}/${user.id}/${user.username}`)
+    }
   }
 
   useEffect(() => {
@@ -113,13 +115,13 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
       <div>
         {setResults.length > 0 ? (
           results.map((user, index) => (
-            <div key={index} className='flex items-center justify-between cursor-pointer' onClick={() => handlenavigate(user)}>
+            <div key={index} className='flex items-center justify-between cursor-pointer' onClick={() => handlenavigate({user, isSelect: true})}>
               <div>
                 <SearchUserCard user={user} />
               </div>
               <div>
                 {istag && (
-                  <Button text="선택" width="w-[60px]" onClick={() => selectUser(user)}/>
+                  <Button text="선택" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
                 )}
               </div>
             </div>
