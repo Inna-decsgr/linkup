@@ -3,7 +3,7 @@ import { Imageformat } from '../utils/Imageformat';
 import { useAuth } from '../context/AuthContext';
 
 
-export default function SearchUserCard({ user, history, setHistory}) {
+export default function SearchUserCard({ user, history, setHistory, onClick}) {
   const { state } = useAuth();
 
   const RemoveHistory = () => {
@@ -29,7 +29,7 @@ export default function SearchUserCard({ user, history, setHistory}) {
 
 
   return (
-    <div className='flex justify-between items-center'>
+    <div className='flex justify-between items-center' onClick={onClick}>
       <div className='flex items-center'>
         <div>
           <img src={Imageformat(user.profile_image)} alt="사용자 프로필 이미지" className="w-[50px] h-[50px] rounded-full object-cover"/>
@@ -45,7 +45,7 @@ export default function SearchUserCard({ user, history, setHistory}) {
       </div>
       <div>
         {history && (
-          <button onClick={RemoveHistory}>x</button>
+          <button onClick={(e) => { e.stopPropagation(); RemoveHistory(); }}>x</button>
         )}
       </div>
     </div>
