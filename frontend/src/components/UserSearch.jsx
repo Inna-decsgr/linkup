@@ -115,7 +115,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
       <div>
         {setResults.length > 0 ? (
           results.map((user, index) => (
-            <div key={index} className='flex items-center justify-between cursor-pointer' onClick={() => handlenavigate({user, isSelect: true})}>
+            <div key={index} className='flex items-center justify-between cursor-pointer' onClick={() => handlenavigate({user, isSelect: false})}>
               <div>
                 <SearchUserCard user={user} />
               </div>
@@ -140,8 +140,8 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
           </div>
           <div>
             {history.map((user, index) => (
-              <div key={index} className='cursor-pointer' onClick={() => navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}>
-                <SearchUserCard user={user} history={true} setHistory={setHistory} />
+              <div key={index} className='cursor-pointer'>
+                <SearchUserCard user={user} history={true} setHistory={setHistory} onClick={() => navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}/>
               </div>
             ))}
         </div>
