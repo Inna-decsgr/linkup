@@ -14,6 +14,8 @@ import ProfilePage from './pages/ProfilePage';
 import UserPosts from './pages/UserPosts';
 import EditPost from './pages/EditPost';
 import UserFollowing from './pages/UserFollowing';
+import DirectMessage from './pages/DirectMessage';
+import MessageList from './pages/MessageList';
 
 
 
@@ -34,6 +36,8 @@ function App() {
               <Route path="/search" element={<SearchPage />} />
               <Route path="/newpost" element={<NewPost />} />
               <Route path="/newpost/details" element={<PostDetails />} />
+              <Route path="/dm" element={<MessageList />} />
+              <Route path="/dm/:userid/:partnerid" element={<DirectMessage />} />
               <Route path="/post/details/edit" element={<EditPost />} />
               <Route path="/:userid/:user_id/:username/:followerinfo" element={<UserFollowing />} />
             </Routes>

@@ -32,6 +32,7 @@ export default function Topbar() {
             <Link to="/search"><i className="fa-solid fa-magnifying-glass"></i></Link>
             <Link to="/newpost"><i className="fa-solid fa-square-plus"></i></Link>
             <button onClick={() => navigate('/settings')}><i className="fa-solid fa-gear"></i></button>
+            <Link to='/dm'><i className="fa-solid fa-message"></i></Link>
             <Link to={`/profile/${state.user.userid}/${state.user.id}/${state.user.username}`}>
               <img src={Imageformat(state.user.profile_image)} alt="프로필 이미지" className='w-[40px] h-[40px] object-cover rounded-full'/>
             </Link>
