@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Imageformat } from '../utils/Imageformat';
 import Button from './ui/Button';
 
@@ -8,6 +8,7 @@ export default function FollowerInfo() {
   const [followers, setFollowers] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState([]);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const value = e.target.value;
@@ -52,12 +53,13 @@ export default function FollowerInfo() {
           </div>
         </div>
 
+        {/** 사용자가 검색한 검색 키워드가 있으면서 검색 결과가 있다면 검색 결과를 보여주기 */}
         {keyword && (
           <>
             {results.length > 0 ? (
               results.map((user, index) => (
                 <div key={index} className='w-full flex justify-between items-center'>
-                  <div className='flex items-center'>
+                  <div className='flex items-center w-[300px] cursor-pointer' onClick={() => {navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}}>
                     <div>
                       <img src={Imageformat(user.profile_image)} alt="사용자 프로필 이미지" className='w-[50px] h-[50px] object-cover rounded-full' />
                     </div>
@@ -67,7 +69,7 @@ export default function FollowerInfo() {
                     </div>
                   </div>
                   <div>
-                    <Button text="메시지" width="w-[90px]" />
+                    <Button text="메시지" width="w-[90px]" onClick={() => {navigate(`/dm/${user_id}/${user.id}`)}}/>
                     <button className='ml-3'>x</button>
                   </div>
                 </div>
@@ -78,10 +80,11 @@ export default function FollowerInfo() {
           </>
         )}
 
+        {/** useEffect 에서 팔로워 목록을 가져와서 보여주는데 keyword가 없을 때만 보여주기. 즉, 사용자가 아직 검색을 하기 전이거나 검색하다가 지워서 키워드가 없을 경우에는 팔로워 목록을 보여주고 키워드가 있을 때는 검색 결과가 보이도록 조건 추가 */}
         {!keyword && followers.map((user, index) => {
           return (
             <div key={index} className='w-full flex justify-between items-center'>
-              <div className='flex items-center'>
+              <div className='flex items-center w-[300px] cursor-pointer' onClick={() => {navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}}>
                 <div>
                   <img src={Imageformat(user.profile_image)} alt="사용자 프로필 이미지" className='w-[50px] h-[50px] object-cover rounded-full' />
                 </div>
@@ -91,7 +94,7 @@ export default function FollowerInfo() {
                 </div>
               </div>
               <div>
-                <Button text="메시지" width="w-[90px]" />
+                <Button text="메시지" width="w-[90px]" onClick={() => {navigate(`/dm/${user_id}/${user.id}`)}} />
                 <button className='ml-3'>x</button>
               </div>
             </div>

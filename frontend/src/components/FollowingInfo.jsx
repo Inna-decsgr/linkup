@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Imageformat } from '../utils/Imageformat';
 import Button from './ui/Button';
 
 export default function FollowingInfo() {
   const { user_id } = useParams();
   const [followings, setFollowings] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPostFollowing = async () => {
@@ -25,8 +26,8 @@ export default function FollowingInfo() {
       <div className='pt-4'>
         {followings.map((user, index) => {
           return (
-            <div key={index} className='w-full flex justify-between items-center py-2'>
-              <div className='flex items-center'>
+            <div key={index} className='w-full flex justify-between items-center py-2 cursor-pointer'>
+              <div className='flex items-center w-[300px]' onClick={() => {navigate(`/profile/${user.userid}/${user.id}/${user.username}`)}}>
                 <div>
                   <img src={Imageformat(user.profile_image)} alt="사용자 프로필 이미지" className='w-[50px] h-[50px] object-cover rounded-full' />
                 </div>
@@ -36,7 +37,7 @@ export default function FollowingInfo() {
                 </div>
               </div>
               <div>
-                <Button text="메시지" width="w-[90px]" />
+                <Button text="메시지" width="w-[90px]" onClick={() => { navigate(`/dm/${user_id}/${user.id}`) }} />
                 <button className='ml-3'>
                   <i className="fa-solid fa-bars text-sm"></i>
                 </button>
