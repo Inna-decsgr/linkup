@@ -158,7 +158,7 @@ export default function UserProfile({ user, isMe }) {
                     '팔로우'
                   )
                 } width="w-[250px]" onClick={toggleFollow}/>
-                <Button text="메시지" width="w-[250px]" />
+                <Button text="메시지" width="w-[250px]" onClick={() => {navigate(`/dm/${state.user?.id}/${user_id}`)}}/>
               </>
           )}
         </div>
