@@ -9,6 +9,16 @@ export default function FollowInfo() {
   const [activeSection, setActiveSection] = useState('followers');
   const [followerscount, setFollowersCount] = useState(null);
   const [followingscount, setFollowingsCount] = useState(null);
+  const { followerinfo } = useParams();
+
+  useEffect(() => {
+    if (followerinfo === `follower`) {
+      setActiveSection('followers')
+    } else {
+      setActiveSection('followings')
+    }
+  }, [followerinfo])
+
 
   useEffect(() => {
     const fetchPostFollowing = async () => {
