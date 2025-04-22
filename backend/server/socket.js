@@ -51,10 +51,26 @@ module.exports = (io, db) => {
         created_at: new Date().toISOString(),
       };
 
+      // 메시지 보낸 사람 정보 가져오기
+      const [senderRows] = await dbPromise.query(
+        `SELECT username, userid, profile_image FROM users WHERE id = ?`,
+        [sender_id]
+      );
+
+      const senderInfo = senderRows[0];
+
+      // ✅ 보낸 사람 정보 추가
+      const enrichedMessage = {
+        ...savedMessage,
+        sender_username: senderInfo.username,
+        sender_userid: senderInfo.userid,
+        sender_profile_image: senderInfo.profile_image,
+      };
+
       // 보내는 사람과 받는 사람에게만 메세지 전송
       // socket.broadcast.emit : 현재 연결된 클라이언트 외에 연결되어 있는 모든 다른 클라이언트들에게 메시지를 보내는 방식
       // io.emit : 메세지를 보낸 사람, 받은 사람 모두 실시간으로 메시지를 받을 수 있음 
-      io.emit("send_message", savedMessage);
+      io.emit("send_message", enrichedMessage);
     });
   });
 };
