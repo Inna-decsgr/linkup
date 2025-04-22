@@ -1,6 +1,5 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const db = require("../models/db"); // MySQL 연결된 db 가져오기
 const { dbPromise } = require('../models/db');
 const multer = require('multer');
 const path = require('path');
