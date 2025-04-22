@@ -1037,5 +1037,56 @@ router.get('/follower/info', async (req, res) => {
 })
 
 
+// 전달받은 사용자 조합으로 대화 목록 가져오기
+router.get('/messages/:user1/:user2', async (req, res) => {
+  const { user1, user2 } = req.params;
+  console.log('메세지 보낸 사람', user1);
+  console.log('메세지 받은 사람', user2);
+
+  try {
+    // 1. dm_rooms 테이블에서 전달받은 두 사용자의 조합과 일치하는 디엠방 아이디 찾기
+    const [roomRows] = await dbPromise.query(
+      `SELECT id
+        FROM dm_rooms 
+        WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`,
+      [user1, user2, user2, user1]
+    );
+    console.log('두 사용자 조합의 디엠룸 아이디', roomRows[0].id);
+
+    if (roomRows.length === 0) {
+      return res.status(404).json({ message: 'DM 기록이 없습니다.' });
+    }
+
+    const dmRoomId = roomRows[0].id;
+
+    // 2. 해당 디엠방의 메시지 가져오기 + 두 사용자의 정보 포함
+    const [messagesResult] = await dbPromise.query(
+      // 메세지에 대한 모든 항목과 보낸 사람, 받은 사람의 정보를 JOIN으로 연결해서 별칭(AS) 로 가져오기
+      `SELECT m.*,
+              s.id AS sender_id, s.userid AS sender_userid, s.username AS sender_username, s.profile_image AS sender_profile_image,
+              r.id AS receiver_id, r.userid AS receiver_userid, r.username AS receiver_username, r.profile_image AS receiver_profile_image
+        FROM messages m
+        JOIN users s ON m.sender_id = s.id
+        JOIN users r ON m.receiver_id = r.id 
+        WHERE m.dm_room_id = ?
+        ORDER BY m.created_at ASC`,
+      [dmRoomId]
+    )
+
+    console.log(`대화 기록 조회 결과`, messagesResult  );
+
+    return res.status(200).json(messagesResult);
+    
+  } catch (error) {
+    console.error("메시지 불러오기 실패:", error);
+    res.status(500).json({ message: "서버 에러 발생" });
+  }
+});
+
+
+
+
+
+
 
 module.exports = router; // 라우터 내보내기
