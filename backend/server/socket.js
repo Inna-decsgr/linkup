@@ -1,8 +1,10 @@
 const { dbPromise } = require('../models/db');
 
+
 module.exports = (io, db) => {
   io.on("connection", (socket) => {
-    // 누군가가 소켓 서버에 연결되었을 때 실행되는 콜백
+    // 백엔드(socket) 서버에서 클라이언트가 소켓 서버에 연결되었을 때 실행되는 코드
+    // "어? 누가 나랑 연결됐네!!" 하고 소켓 받아서 대응하는 곳
     console.log("✅ WebSocket 연결됨");
 
     socket.on("send_message", async (data) => {
@@ -35,14 +37,24 @@ module.exports = (io, db) => {
       }
 
       // 2. 메시지 저장
-      await dbPromise.query(
+      const [insertResult] = await dbPromise.query(
         'INSERT INTO messages (dm_room_id, sender_id, receiver_id, content) VALUES (?, ?, ?, ?)',
         [roomId, sender_id, receiver_id, content]
       );
 
-      // 메시지 전달
-      // 현재 연결된 클라이언트 외에 연결되어 있는 모든 다른 클라이언트들에게 메시지를 보내는 방식
-      socket.broadcast.emit("message", data);
+      const savedMessage = {
+        id: insertResult.insertId,
+        dm_room_id: roomId,
+        sender_id,
+        receiver_id,
+        content,
+        created_at: new Date().toISOString(),
+      };
+
+      // 보내는 사람과 받는 사람에게만 메세지 전송
+      // socket.broadcast.emit : 현재 연결된 클라이언트 외에 연결되어 있는 모든 다른 클라이언트들에게 메시지를 보내는 방식
+      // io.emit : 메세지를 보낸 사람, 받은 사람 모두 실시간으로 메시지를 받을 수 있음 
+      io.emit("send_message", savedMessage);
     });
   });
 };
