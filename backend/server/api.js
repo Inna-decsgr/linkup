@@ -1111,7 +1111,10 @@ router.post(`/rooms/:roomid/read`, async (req, res) => {
       // 없으면 읽음 기록 새로 삽입
       await dbPromise.query(
         `INSERT INTO message_reads (room_id, user_id, last_read_message_id)
-        VALUES (?, ?, ?)`,
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+        last_read_message_id = VALUES(last_read_message_id),
+        updated_at = NOW();`,
         [roomid, userid, messageid]
       );
     }
