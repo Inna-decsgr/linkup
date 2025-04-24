@@ -1084,6 +1084,56 @@ router.get('/messages/:user1/:user2', async (req, res) => {
 });
 
 
+// 해당 채팅방에 들어오면 메세지 읽음 표시하기
+router.post(`/rooms/:roomid/read`, async (req, res) => {
+  const roomid = req.params.roomid;
+  const { userid, messageid } = req.body;
+
+  console.log('읽음 처리할 대화 방', roomid);
+  console.log('읽은 사람', userid);
+  console.log('어떤 메세지 읽음 처리할 지', messageid);
+
+  try {
+    // 기존에 읽음 기록이 있는지 확인
+    const [existing] = await dbPromise.query(
+      `SELECT * FROM message_reads WHERE room_id = ? AND user_id = ?`,
+      [roomid, userid]
+    );
+
+    if (existing.length > 0) {
+      // 기존 기록이 있다면 업데이트
+      await dbPromise.query(
+        `UPDATE message_reads SET last_read_message_id = ?, updated_at = NOW()
+        WHERE room_id = ? AND user_id = ?`,
+        [messageid, roomid, userid]
+      );
+    } else {
+      // 없으면 읽음 기록 새로 삽입
+      await dbPromise.query(
+        `INSERT INTO message_reads (room_id, user_id, last_read_message_id)
+        VALUES (?, ?, ?)`,
+        [roomid, userid, messageid]
+      );
+    }
+
+    const [result] = await dbPromise.query(
+      `SELECT last_read_message_id FROM message_reads
+        WHERE room_id = ? AND user_id = ?`,
+      [roomid, userid]
+    );
+
+    if (result.length > 0) {
+      res.json({ last_read_message_id: result[0].last_read_message_id });
+    } else {
+      res.json({ last_read_message_id: null });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '읽음 처리 중 오류 발생' });
+  }
+})
+
+
 
 
 
