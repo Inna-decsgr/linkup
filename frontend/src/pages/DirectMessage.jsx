@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import socket from '../socket.js'
 import { Imageformat } from '../utils/Imageformat';
@@ -15,6 +15,7 @@ export default function DirectMessage() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [lastmessage, setLastMessage] = useState('');
+  const scrollRef = useRef(null);
 
   // 이전 대화 가져오기
   useEffect(() => {
@@ -48,9 +49,8 @@ export default function DirectMessage() {
 
 
 
-  // 메시지 수신
+  // 연결된 소켓을 통해 실시간으로 메시지 수신
   useEffect(() => {
-    // 연결된 소켓을 통해 실시간 데이터 받음
     socket.on('send_message', (data) => { 
       // 내가 보낸 메세지라면 messages에 추가하지 않고 무시
       if (data.sender_id === Number(userid)) return;
@@ -64,8 +64,16 @@ export default function DirectMessage() {
     };
   }, [userid]);
 
+  
+  // 새로운 메세지 보내면 스크롤 이동시켜서 새로운 메세지로 포커스 보내기
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages])
 
-  // 메시지 전송
+
+  // 메시지 전송 함수
   const sendMessage = () => {
     if (!message.trim()) return;
     console.log('메세지 내용', message);
@@ -93,6 +101,7 @@ export default function DirectMessage() {
   }
 
 
+  // 메세지를 날짜, 시간대별로 그룹화하기
   const groupMessagesByTimeGap = (messages) => {
     const grouped = [];
     let currentGroup = [];
@@ -144,7 +153,7 @@ export default function DirectMessage() {
               {group.map((m, index) => {
                 const isSender = m.sender_id === Number(userid);
                 return (
-                  <div key={index} className={`relative flex items-center ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
+                  <div key={index} ref={scrollRef} className={`relative flex items-center ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
                     <div className={`flex items-center ${isSender ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
                       <img
                         src={Imageformat(m.sender_profile_image)}
