@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import socket from '../socket.js'
 import { Imageformat } from '../utils/Imageformat';
 import { useAuth } from '../context/AuthContext.js';
+import { format, isToday, isYesterday } from 'date-fns';
+import ko from 'date-fns/locale/ko';
 
 
 
@@ -70,23 +72,71 @@ export default function DirectMessage() {
     sendMessage();
   }
 
+
+  const groupMessagesByTimeGap = (messages) => {
+    const grouped = [];
+    let currentGroup = [];
+    let lastTimestamp = null;
+
+    messages.forEach((msg) => {
+      const currentTimestamp = new Date(msg.created_at).getTime();
+
+      if (!lastTimestamp || (currentTimestamp - lastTimestamp) > 10 * 60 * 1000 ) {
+        // 그룹 종료하고 새로운 그룹 시작
+        if (currentGroup.length > 0) {
+          grouped.push(currentGroup);
+        }
+        currentGroup = [msg]; // 새로운 그룹 시작
+      } else {
+        currentGroup.push(msg); // 같은 그룹에 추가
+      }
+
+      lastTimestamp = currentTimestamp;
+    });
+
+    if (currentGroup.length > 0) {
+      grouped.push(currentGroup);
+    }
+    return grouped;
+  };
+
+
+
   return (
-    <div className='w-[500px] mx-auto'>
-      <div className='bg-red-100'>
-        {messages.map((m, index) => {
-          const isSender = m.sender_id === Number(userid);
+    <div className='bg-red-100 w-[500px] h-[80vh] mx-auto'>
+      <div className='h-full overflow-y-auto p-4 text-xs'>
+        {groupMessagesByTimeGap(messages).map((group, index) => {
+          const groupDate = new Date(group[0].created_at);
+          
+          // 오늘인지, 어제인지, 아니면 날짜 출력
+          let dateLabel = '';
+          if (isToday(groupDate)) {
+            dateLabel = `오늘 ${format(groupDate, 'a h:mm', { locale: ko })}`;
+          } else if (isYesterday(groupDate)) {
+            dateLabel = `어제 ${format(groupDate, 'a h:mm', { locale: ko })}`;
+          } else {
+            dateLabel = format(groupDate, 'M월 d일 (E) a h:mm', { locale: ko });
+          }
 
           return (
-            <div key={index} className={`flex ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
-              <div className={`flex items-center ${isSender ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
-                <img
-                  src={Imageformat(m.sender_profile_image)}
-                  alt="프로필 이미지"
-                  className='w-[40px] h-[40px] rounded-full object-cover mx-2' />
-              </div>
-              <div className={`p-2 rounded-lg ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%]`}>
-                <p>{m.content}</p>
-              </div>
+            <div key={index} className='mb-6'>
+              <div className='text-center text-gray-500 text-sm mb-2'>{dateLabel}</div>
+              {group.map((m, index) => {
+                const isSender = m.sender_id === Number(userid);
+                return (
+                  <div key={index} className={`flex ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
+                    <div className={`flex items-center ${isSender ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
+                      <img
+                        src={Imageformat(m.sender_profile_image)}
+                        alt="프로필 이미지"
+                        className='w-[40px] h-[40px] rounded-full object-cover mx-2' />
+                    </div>
+                    <div className={`rounded-xl ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%] py-2 px-3`}>
+                      <p>{m.content}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )
         })}
