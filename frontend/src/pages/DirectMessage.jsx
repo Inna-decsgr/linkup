@@ -14,6 +14,7 @@ export default function DirectMessage() {
   const { userid, partnerid } = useParams();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [lastmessage, setLastMessage] = useState('');
 
   // 이전 대화 가져오기
   useEffect(() => {
@@ -22,6 +23,25 @@ export default function DirectMessage() {
       const data = await res.json();
       console.log('가져온 대화 내용', data);
       setMessages(data);
+
+      if (data.length > 0) {
+        const roomId = data[0].dm_room_id;
+        const lastMessageId = data[data.length - 1].id;
+
+
+        // 읽음 처리 API 호출
+        const res = await fetch(`http://localhost:5000/api/rooms/${roomId}/read`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userid: Number(userid),
+            messageid: lastMessageId
+          })
+        })
+        const readResult = await res.json();
+        console.log('읽음 처리 관련 데이터', readResult.last_read_message_id);
+        setLastMessage(readResult.last_read_message_id);
+      }
     }
     fetchAllMessages();
   }, [userid, partnerid])
@@ -104,7 +124,7 @@ export default function DirectMessage() {
 
   return (
     <div className='bg-red-100 w-[500px] h-[80vh] mx-auto'>
-      <div className='h-full overflow-y-auto p-4 text-xs'>
+      <div className='h-full overflow-y-auto p-4'>
         {groupMessagesByTimeGap(messages).map((group, index) => {
           const groupDate = new Date(group[0].created_at);
           
@@ -124,7 +144,7 @@ export default function DirectMessage() {
               {group.map((m, index) => {
                 const isSender = m.sender_id === Number(userid);
                 return (
-                  <div key={index} className={`flex ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
+                  <div key={index} className={`relative flex items-center ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
                     <div className={`flex items-center ${isSender ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
                       <img
                         src={Imageformat(m.sender_profile_image)}
@@ -132,8 +152,11 @@ export default function DirectMessage() {
                         className='w-[40px] h-[40px] rounded-full object-cover mx-2' />
                     </div>
                     <div className={`rounded-xl ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%] py-2 px-3`}>
-                      <p>{m.content}</p>
+                      <p className='text-sm'>{m.content}</p>
                     </div>
+                    {isSender && m.id === Number(lastmessage) && (
+                      <p className='absolute bottom-[-18px] right-3 text-[11px] text-gray-600'>읽음</p>
+                    )}
                   </div>
                 )
               })}
