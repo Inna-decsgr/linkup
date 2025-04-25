@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import socket from '../socket.js'
 import { Imageformat } from '../utils/Imageformat';
 import { useAuth } from '../context/AuthContext.js';
@@ -7,17 +7,21 @@ import { format, isToday, isYesterday } from 'date-fns';
 import ko from 'date-fns/locale/ko';
 
 
-
-
 export default function DirectMessage() {
   const { state } = useAuth();
   const { userid, partnerid } = useParams();
+
+  const location = useLocation();
+  const partner = location.state;
+  const partnername = partner?.partnername;
+  const partner_id = partner?.partner_id;
+  const partnerimage = partner?.profileimage;
+
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [lastmessage, setLastMessage] = useState('');
   const [roomid, setRoomId] = useState('');
   const scrollRef = useRef(null);
-
 
   // 이전 대화 가져와서 보여주고 메세지 읽음 처리
   useEffect(() => {
@@ -187,6 +191,15 @@ export default function DirectMessage() {
 
           return (
             <div key={index} className='mb-6'>
+              <div className='mb-3'>
+                <div className='flex items-center'>
+                  <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
+                  <div>
+                    <p className='text-sm font-bold'>{partnername}</p>
+                    <p className='text-[12px] text-gray-600'>{partner_id}</p>
+                  </div>
+                </div>
+              </div>
               <div className='text-center text-gray-500 text-sm mb-2'>{dateLabel}</div>
               {group.map((m, index) => {
                 const isSender = m.sender_id === Number(userid);
@@ -199,8 +212,6 @@ export default function DirectMessage() {
                         className='w-[40px] h-[40px] rounded-full object-cover mx-2' />
                     </div>
                     <div className={`rounded-xl ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%] py-2 px-3`}>
-                      <p>{m.id}</p>
-                      <p>{lastmessage}</p>
                       <p className='text-sm'>{m.content}</p>
                     </div>
                     {isSender && m.id === Number(lastmessage) && (
