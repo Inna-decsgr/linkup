@@ -19,7 +19,7 @@ export default function DirectMessage() {
   const scrollRef = useRef(null);
 
 
-  // 이전 대화 가져오기
+  // 이전 대화 가져와서 보여주고 메세지 읽음 처리
   useEffect(() => {
     const fetchAllMessages = async () => {
       const res = await fetch(`http://localhost:5000/api/messages/${userid}/${partnerid}`);
@@ -32,7 +32,8 @@ export default function DirectMessage() {
         setRoomId(roomid);
         const lastMessageid = data[data.length - 1].id;
         
-        // 메세지 읽었다고 서버에 알리기(실시간 읽음 처리 위함)
+        // 새로 받은 메세지가 있다면 이 대화방에 들어왔을 때 읽음 처리를 해야함
+        // 메세지 읽었다고 서버에 알리기(실시간 읽음 처리 위해서 socket으로 처리)
         socket.emit('read_message', {
           roomid,
           userid: Number(userid),
@@ -50,31 +51,48 @@ export default function DirectMessage() {
       setLastMessage(messageid);
     };
 
-    // read_message_update라는 이벤트가 서버로부터 오면, handleReadUpdate 함수를 실행해줘라는 뜻
+    // read_message_update 소켓 이벤트가 서버에서 발생되면, handleReadUpdate 함수를 실행해줘라는 뜻
     // 자바스크립트에서 함수는 그 자체로 값이 되기 때문에 handleReadUpdate 처럼 () 없이 전달하면 함수를 실행하지 않고
     // 참조만 전달한다는 뜻이다. 즉 handleReadUpdate 함수를 socket.io가 이벤트가 발생했을 때 실행할 콜백으로 기억해두는 것!
     socket.on('read_message_update', handleReadUpdate);
-    return () => {
+    return () => {   // 그리고 언마운트되면 read_message_update 소켓 이벤트 해지
       socket.off('read_message_update', handleReadUpdate);
     }
 
   }, [userid, partnerid]);
 
 
+  // 사용자가 메세지를 보내면 서버에서 메세지를 저장한 다음 "나 이 메세지 디비에 저장했어!" 하고 알려주는데
+  // 우리는 디비에 저장한 이 메세지에 대한 정보가 필요하기 때문에 socket.on("send_message", { ... })로 받아와서 해당 메세지를
+  // handleReceiveMessage에서 처리함.
+  // 내가 보낸 메세지도 화면에 표시되어야하니까 setMessages((prev) => [...prev, msg]) 로 화면에 렌더링 함
+  // 그리고 socket.join으로 대화방에 속한 두 유저가 실시간 대화중이라면 읽음 처리를 실시간으로 해줘야하기 때문에
+  // read_message 소켓 이벤트를 handleReceiveMessage 함수 내에서 수행
   useEffect(() => {
-    // 새로 보내는 메세지의 데이터에 id가 없어서 마지막 메세지인지 비교를 할 수 없어서
-    // id가 포함된 메세지 정보를 setMessages로 해서 저장하면 비교 가능함!
+    // 새로 보내는 메세지의 데이터에 id가 없어서 마지막 메세지인지 비교를 할 수 없음
+    // 그래서 id가 포함된 메세지 정보를 setMessages로 해서 저장하면 비교 가능함!
     const handleReceiveMessage = (msg) => {
       console.log('실시간으로 받은 메시지:', msg);
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        const exists = prev.some(m => m.id === msg.id);
+        if (exists) return prev;  // 이미 같은 메세지가 있다면 추가 X
+        return [...prev, msg];
+      });
+
+      // 메시지를 추가한 다음에, 내가 이 메시지를 읽었다고 알림
+      socket.emit('read_message', {
+        roomid: msg.dm_room_id,
+        userid: Number(userid),
+        messageid: msg.id
+      });
     };
-
+    
     socket.on("send_message", handleReceiveMessage);
-
     return () => {
+      // 정확히 동일한 콜백을 제거해야 중복 방지됨!!
       socket.off("send_message", handleReceiveMessage);
     };
-  }, []);
+  }, [userid]);
 
 
 
@@ -85,23 +103,6 @@ export default function DirectMessage() {
       socket.emit('leave_room', roomid);  // 컴포넌트가 언마운트되거나, roomid가 바뀔 때 실행됨
     }
   }, [roomid])
-
-
-
-  // 연결된 소켓을 통해 실시간으로 메시지 수신
-  useEffect(() => {
-    socket.on('send_message', (data) => { 
-      // 내가 보낸 메세지라면 messages에 추가하지 않고 무시
-      if (data.sender_id === Number(userid)) return;
-
-      console.log('💬 받은 메시지:', data);
-      setMessages(prev => [...prev, data]);
-    });
-
-    return () => {
-      socket.off('send_message'); //
-    };
-  }, [userid]);
 
   
   // 새로운 메세지 보내면 스크롤 이동시켜서 새로운 메세지로 포커스 보내기
@@ -127,7 +128,7 @@ export default function DirectMessage() {
       sender_profile_image: state.user?.profile_image, 
     };
 
-    // 👉 socket으로 서버에 전송
+    // socket으로 서버에 "나 메세지 보냈어!"하고 알림
     socket.emit('send_message', newMessage);
     setMessage('');
   };
@@ -198,10 +199,10 @@ export default function DirectMessage() {
                         className='w-[40px] h-[40px] rounded-full object-cover mx-2' />
                     </div>
                     <div className={`rounded-xl ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%] py-2 px-3`}>
+                      <p>{m.id}</p>
+                      <p>{lastmessage}</p>
                       <p className='text-sm'>{m.content}</p>
                     </div>
-                    <p>{m.id}</p>
-                    <p>{lastmessage}</p>
                     {isSender && m.id === Number(lastmessage) && (
                       <p className='absolute bottom-[-18px] right-3 text-[11px] text-gray-600'>읽음</p>
                     )}
