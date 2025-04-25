@@ -72,5 +72,61 @@ module.exports = (io, db) => {
       // io.emit : 메세지를 보낸 사람, 받은 사람 모두 실시간으로 메시지를 받을 수 있음 
       io.emit("send_message", enrichedMessage);
     });
-  });
+
+
+    // 대화방에 입장, 퇴장을 서버에서도 처리하고 다시 클라이언트에 알리기
+    // socket.to(roomid).emit()을 하려면 socket.join을 반드시 해줘야함 이게 안 돼 있으면 socket.to는 허공에다가 말하는게 됨!
+    socket.on('join_room', (roomid) => {
+      socket.join(roomid);
+      console.log('소켓이 룸에 참여함', roomid);
+    });
+
+    socket.on('leave_room', (roomid) => {
+      socket.leave(roomid);
+      console.log('소켓이 룸에서 나감', roomid);
+    })
+
+
+    // 실시간 읽음 처리 하는 read_message 함수
+    socket.on("read_message", async (data) => {
+      const { roomid, userid, messageid } = data;
+
+      console.log('읽음 처리할 대화 방', roomid);
+      console.log('읽은 사람', userid);
+      console.log('어떤 메세지 읽음 처리할 지', messageid);
+
+      // 기존에 읽음 기록이 있는지 확인
+      const [existing] = await dbPromise.query(
+        `SELECT * FROM message_reads WHERE room_id = ? AND user_id = ?`,
+        [roomid, userid]
+      );
+
+      if (existing.length > 0) {
+        // 기존 기록이 있다면 업데이트
+        await dbPromise.query(
+          `UPDATE message_reads SET last_read_message_id = ?, updated_at = NOW()
+          WHERE room_id = ? AND user_id = ?`,
+          [messageid, roomid, userid]
+        );
+      } else {
+        // 없으면 읽음 기록 새로 삽입
+        await dbPromise.query(
+          `INSERT INTO message_reads (room_id, user_id, last_read_message_id)
+          VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+          last_read_message_id = VALUES(last_read_message_id),
+          updated_at = NOW();`,
+          [roomid, userid, messageid]
+        );
+      }
+
+
+      // 메세지 읽음 처리 후 상대방에게 읽었다고 알려주기!
+      socket.to(roomid).emit("read_message_update", {
+        readerid: userid,
+        messageid: messageid,
+      })
+    });
+
+  })
 };
