@@ -15,7 +15,9 @@ export default function DirectMessage() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [lastmessage, setLastMessage] = useState('');
+  const [roomid, setRoomId] = useState('');
   const scrollRef = useRef(null);
+
 
   // 이전 대화 가져오기
   useEffect(() => {
@@ -26,26 +28,63 @@ export default function DirectMessage() {
       setMessages(data);
 
       if (data.length > 0) {
-        const roomId = data[0].dm_room_id;
-        const lastMessageId = data[data.length - 1].id;
-
-
-        // 읽음 처리 API 호출
-        const res = await fetch(`http://localhost:5000/api/rooms/${roomId}/read`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userid: Number(userid),
-            messageid: lastMessageId
-          })
-        })
-        const readResult = await res.json();
-        console.log('읽음 처리 관련 데이터', readResult.last_read_message_id);
-        setLastMessage(readResult.last_read_message_id);
+        const roomid = data[0].dm_room_id;
+        setRoomId(roomid);
+        const lastMessageid = data[data.length - 1].id;
+        
+        // 메세지 읽었다고 서버에 알리기(실시간 읽음 처리 위함)
+        socket.emit('read_message', {
+          roomid,
+          userid: Number(userid),
+          messageid: lastMessageid
+        });
       }
     }
     fetchAllMessages();
-  }, [userid, partnerid])
+    
+
+    // 서버에서 메세지 읽음 처리를 하고 "읽음 처리 했어!"라고 다시 받아오는 로직은 따로 빼주기
+    // 안 그러면 fetchAllMessages 가 다시 실행될 때 socket.on()이 중복 등록될 수도 있음
+    const handleReadUpdate = ({ readerid, messageid }) => {
+      console.log('상대방이 읽었음!', readerid, messageid);
+      setLastMessage(messageid);
+    };
+
+    // read_message_update라는 이벤트가 서버로부터 오면, handleReadUpdate 함수를 실행해줘라는 뜻
+    // 자바스크립트에서 함수는 그 자체로 값이 되기 때문에 handleReadUpdate 처럼 () 없이 전달하면 함수를 실행하지 않고
+    // 참조만 전달한다는 뜻이다. 즉 handleReadUpdate 함수를 socket.io가 이벤트가 발생했을 때 실행할 콜백으로 기억해두는 것!
+    socket.on('read_message_update', handleReadUpdate);
+    return () => {
+      socket.off('read_message_update', handleReadUpdate);
+    }
+
+  }, [userid, partnerid]);
+
+
+  useEffect(() => {
+    // 새로 보내는 메세지의 데이터에 id가 없어서 마지막 메세지인지 비교를 할 수 없어서
+    // id가 포함된 메세지 정보를 setMessages로 해서 저장하면 비교 가능함!
+    const handleReceiveMessage = (msg) => {
+      console.log('실시간으로 받은 메시지:', msg);
+      setMessages((prev) => [...prev, msg]);
+    };
+
+    socket.on("send_message", handleReceiveMessage);
+
+    return () => {
+      socket.off("send_message", handleReceiveMessage);
+    };
+  }, []);
+
+
+
+  // 클라이언트가 해당 대화방에 들어왔다고 소켓으로 서버에 알려야함
+  useEffect(() => {
+    socket.emit('join_room', roomid);  // 컴포넌트가 마운트되거나 roomid가 바뀔 때 실행됨
+    return () => {  // 채팅방 페이지를 나가게 되거나 다른 채팅방으로 이동해서 roomid가 변경되면 자동으로 실행되면서 해당 채팅방에서는 leave 됨
+      socket.emit('leave_room', roomid);  // 컴포넌트가 언마운트되거나, roomid가 바뀔 때 실행됨
+    }
+  }, [roomid])
 
 
 
@@ -90,8 +129,6 @@ export default function DirectMessage() {
 
     // 👉 socket으로 서버에 전송
     socket.emit('send_message', newMessage);
-    // 👉 optimistic UI: 일단 화면에 표시
-    setMessages((prev) => [...prev, newMessage]);
     setMessage('');
   };
 
@@ -163,6 +200,8 @@ export default function DirectMessage() {
                     <div className={`rounded-xl ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%] py-2 px-3`}>
                       <p className='text-sm'>{m.content}</p>
                     </div>
+                    <p>{m.id}</p>
+                    <p>{lastmessage}</p>
                     {isSender && m.id === Number(lastmessage) && (
                       <p className='absolute bottom-[-18px] right-3 text-[11px] text-gray-600'>읽음</p>
                     )}
