@@ -70,7 +70,8 @@ module.exports = (io, db) => {
       // 보내는 사람과 받는 사람에게만 메세지 전송
       // socket.broadcast.emit : 현재 연결된 클라이언트 외에 연결되어 있는 모든 다른 클라이언트들에게 메시지를 보내는 방식
       // io.emit : 메세지를 보낸 사람, 받은 사람 모두 실시간으로 메시지를 받을 수 있음 
-      io.emit("send_message", enrichedMessage);
+      // io.emit은 모든 소켓에게 메세지를 보내는 거라서 채팅방에 없는 다른 사용자에게도 메세지가 전송되기 때문에 해당 room에 join(입장)한 소켓들에게만 전송되도록 => 딱 그 대화방 안에 있는 두 사람에게만 메세지를 보내도록 io.to(roomId).emit을 사용
+      io.to(roomId).emit("send_message", enrichedMessage);
     });
 
 
