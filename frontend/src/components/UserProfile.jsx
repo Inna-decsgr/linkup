@@ -11,7 +11,7 @@ import { Imageformat } from '../utils/Imageformat';
 export default function UserProfile({ user, isMe }) {
   const { state } = useAuth();
   // 이때 state는 로그인한 사용자, props로 전달받은 정보는 다른 사용자에 대한 정보, 팔로우 정보 표시할 때 사용
-  const { user_id } = useParams();
+  const { userid, user_id, username } = useParams();
   const navigate = useNavigate();
   const [isFollowing, setIsFollowing] = useState(false);  // 팔로잉 여부
   const [activeSection, setActiveSection] = useState('posts');  // 컴포넌트 섹션 상태
@@ -158,7 +158,7 @@ export default function UserProfile({ user, isMe }) {
                     '팔로우'
                   )
                 } width="w-[250px]" onClick={toggleFollow}/>
-                <Button text="메시지" width="w-[250px]" onClick={() => {navigate(`/dm/${state.user?.id}/${user_id}`)}}/>
+                <Button text="메시지" width="w-[250px]" onClick={() => {navigate(`/dm/${state.user?.id}/${user_id}`, {state: {partnername:username, partner_id:userid, profileimage: user?.profile_image}})}}/>
               </>
           )}
         </div>
