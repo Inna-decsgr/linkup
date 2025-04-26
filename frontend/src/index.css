@@ -54,3 +54,19 @@ code {
   opacity: 0.9;
   transform: rotate(45deg);
 }
+
+
+
+/* 얇고 세련되게 커스텀 */
+::-webkit-scrollbar {
+  width: 6px; /* 스크롤바 두께 */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3); /* 스크롤바 색깔 */
+  border-radius: 10px; /* 둥글게 */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* 스크롤바 트랙 배경 */
+}

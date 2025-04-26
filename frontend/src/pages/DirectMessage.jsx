@@ -5,6 +5,7 @@ import { Imageformat } from '../utils/Imageformat';
 import { useAuth } from '../context/AuthContext.js';
 import { format, isToday, isYesterday } from 'date-fns';
 import ko from 'date-fns/locale/ko';
+import '../index.css'
 
 
 export default function DirectMessage() {
@@ -187,21 +188,24 @@ export default function DirectMessage() {
 
 
   return (
-    <div className='bg-red-100 w-[500px] h-[80vh] mx-auto'>
-      <div className='h-full overflow-y-auto p-4'>
-        <div className='mb-3'>
-          <div className='flex items-center'>
-            <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
+    <div className='relative bg-red-100 w-[500px] h-[80vh] mx-auto flex flex-col border p-2'>
+      <div className='absolute top-0 left-0 w-full bg-red-100 z-50 p-3'>
+        <div className='flex items-center'>
+          <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
+          <div className='relative'>
             <div className='relative'>
               <p className='text-sm font-bold'>{partnername}</p>
               <p className='text-[12px] text-gray-600'>{partner_id}</p>
-              {ispartner && (
-                <div className='absolute top-[7px] right-[8px] w-[7px] h-[7px] bg-violet-500 rounded-full'></div>
-              )}
             </div>
+            {ispartner && (
+              <div className='absolute top-[6px] left-[45px] w-[7px] h-[7px] bg-violet-500 rounded-full'></div>
+            )}
           </div>
         </div>
-        {groupMessagesByTimeGap(messages).map((group, index) => {
+      </div>
+      <div className='flex-1 overflow-y-auto'>
+        <div className='mt-[60px]'>
+          {groupMessagesByTimeGap(messages).map((group, index) => {
           const groupDate = new Date(group[0].created_at);
           
           // 오늘인지, 어제인지, 아니면 날짜 출력
@@ -213,6 +217,7 @@ export default function DirectMessage() {
           } else {
             dateLabel = format(groupDate, 'M월 d일 (E) a h:mm', { locale: ko });
           }
+        
 
           return (
             <div key={index} className='mb-6'>
@@ -237,22 +242,22 @@ export default function DirectMessage() {
                 )
               })}
             </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
 
-      <div>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder='메세지 보내기...'
-            className='border py-1 px-2 w-[400px]'
-          />
-        </form>
+        <div>
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder='메세지 보내기...'
+              className='border py-1 px-2 w-[400px]'
+            />
+          </form>
+        </div>
       </div>
     </div>
   );
 }
-
