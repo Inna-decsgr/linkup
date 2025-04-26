@@ -10,6 +10,7 @@ import ko from 'date-fns/locale/ko';
 export default function DirectMessage() {
   const { state } = useAuth();
   const { userid, partnerid } = useParams();
+  const [ispartner, setIsPartner] = useState(false);
 
   const location = useLocation();
   const partner = location.state;
@@ -99,12 +100,24 @@ export default function DirectMessage() {
   }, [userid]);
 
 
-
-  // 클라이언트가 해당 대화방에 들어왔다고 소켓으로 서버에 알려야함
+  // 컴포넌트가 마운트되거나 roomid가 바뀔 때 클라이언트가 해당 대화방에 들어왔다고 소켓으로 서버에 알려야함
   useEffect(() => {
-    socket.emit('join_room', roomid);  // 컴포넌트가 마운트되거나 roomid가 바뀔 때 실행됨
+    socket.emit('join_room', roomid);  // join_room 소캣 이벤트를 보내서 서버에 "나 이 대화방에 들어갈게!"라고 알림\
+
+    // 서버에서 대화방에 참여중인 사용자들에게 누가 참여중인지 알리면 여기서 socket.on('room_users', { ... })로 받음
+    socket.on('room_users', (data) => {
+      console.log('현재 방 참여자들:', data.users);
+
+      // 지금 접속 중인 사용자 수를 기준으로 나를 제외하고 다른 사람이 있으면 = 2명 이상이면
+      if (data.users.length > 1) {
+        setIsPartner(true);
+      } else {
+        setIsPartner(false);
+      }
+    });
+
     return () => {  // 채팅방 페이지를 나가게 되거나 다른 채팅방으로 이동해서 roomid가 변경되면 자동으로 실행되면서 해당 채팅방에서는 leave 됨
-      socket.emit('leave_room', roomid);  // 컴포넌트가 언마운트되거나, roomid가 바뀔 때 실행됨
+      socket.emit('leave_room', roomid); // 서버에 "나 이 방에서 이제 나간다!" 라고 알림
     }
   }, [roomid])
 
@@ -176,6 +189,18 @@ export default function DirectMessage() {
   return (
     <div className='bg-red-100 w-[500px] h-[80vh] mx-auto'>
       <div className='h-full overflow-y-auto p-4'>
+        <div className='mb-3'>
+          <div className='flex items-center'>
+            <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
+            <div className='relative'>
+              <p className='text-sm font-bold'>{partnername}</p>
+              <p className='text-[12px] text-gray-600'>{partner_id}</p>
+              {ispartner && (
+                <div className='absolute top-[7px] right-[8px] w-[7px] h-[7px] bg-violet-500 rounded-full'></div>
+              )}
+            </div>
+          </div>
+        </div>
         {groupMessagesByTimeGap(messages).map((group, index) => {
           const groupDate = new Date(group[0].created_at);
           
@@ -191,15 +216,6 @@ export default function DirectMessage() {
 
           return (
             <div key={index} className='mb-6'>
-              <div className='mb-3'>
-                <div className='flex items-center'>
-                  <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
-                  <div>
-                    <p className='text-sm font-bold'>{partnername}</p>
-                    <p className='text-[12px] text-gray-600'>{partner_id}</p>
-                  </div>
-                </div>
-              </div>
               <div className='text-center text-gray-500 text-sm mb-2'>{dateLabel}</div>
               {group.map((m, index) => {
                 const isSender = m.sender_id === Number(userid);
