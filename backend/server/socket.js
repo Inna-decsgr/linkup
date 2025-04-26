@@ -74,18 +74,38 @@ module.exports = (io, db) => {
       io.to(roomId).emit("send_message", enrichedMessage);
     });
 
-
+    
+    
     // 대화방에 입장, 퇴장을 서버에서도 처리하고 다시 클라이언트에 알리기
     // socket.to(roomid).emit()을 하려면 socket.join을 반드시 해줘야함 이게 안 돼 있으면 socket.to는 허공에다가 말하는게 됨!
     socket.on('join_room', (roomid) => {
-      socket.join(roomid);
+      socket.join(roomid);  // 전달받은 roomid를 사용해 socket.join(roomid)로 소켓을 방에 집어넣음
       console.log('소켓이 룸에 참여함', roomid);
+
+      // 서버가 관리하는 room 정보를 가져옴
+      //// io에서 기본으로 제공하는 sockets.adapter.rooms 함수인데 소켓 서박 자동으로 관리해주는 방 목록을 말함
+      const room = io.sockets.adapter.rooms.get(roomid);  // 소켓 서버가 관리하는 방 목록들 중에서 get(roomid)로 특정 방을 찾아서 room에 저장
+
+      if (room) {
+        const users = Array.from(room);  // 가져온 방에 참여중인 소켓 ID(대화에 참여중인 사용자들)들을 Array.from(room)으로 배열로 변환(['소켓ID1', '소켓ID2', ...] 이런식으로)해서 users에 저장
+        io.to(roomid).emit('room_users', { users }); // 대화에 참여중인 users 리스트를 io.to(roomid).emit('room_users', {users}) 로 대화방에 있는 모든 사람에게 누가 대화방에 참여중인지 알림
+      }
     });
 
+    // 프론트에서 대화방에서 나간다고 알리면 여기에서 "방에서 나간다고? 처리할게!"하고 받음
     socket.on('leave_room', (roomid) => {
-      socket.leave(roomid);
+      socket.leave(roomid); // 소켓에서 해당 대화방을 내보냄
       console.log('소켓이 룸에서 나감', roomid);
-    })
+
+      const room = io.sockets.adapter.rooms.get(roomid);  // 입장했을때랑 마찬가지로 해당 대화방을 가져온 후에 
+      if (room) {
+        const users = Array.from(room);  // 현재 누가 대화방에 남아있는지를 확인한다음
+        io.to(roomid).emit('room_users', { users });  // 다시 이 대화방에 속해 있는 사람들에게 "대화방을 나간 사람이 있어! 지금 남아있는 사람들은 이 사람들이야!" 하고 알림
+      } else {
+        // 방에 아무도 없으면 빈 배열
+        io.to(roomid).emit('room_users', { users: [] });
+      }
+    });
 
 
     // 실시간 읽음 처리 하는 read_message 함수
