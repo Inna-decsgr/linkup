@@ -1073,7 +1073,7 @@ router.get('/messages/:user1/:user2', async (req, res) => {
       [dmRoomId]
     )
 
-    console.log(`대화 기록 조회 결과`, messagesResult  );
+    //console.log(`대화 기록 조회 결과`, messagesResult  );
 
     return res.status(200).json(messagesResult);
     
@@ -1084,59 +1084,53 @@ router.get('/messages/:user1/:user2', async (req, res) => {
 });
 
 
-// 해당 채팅방에 들어오면 메세지 읽음 표시하기
-router.post(`/rooms/:roomid/read`, async (req, res) => {
-  const roomid = req.params.roomid;
-  const { userid, messageid } = req.body;
 
-  console.log('읽음 처리할 대화 방', roomid);
-  console.log('읽은 사람', userid);
-  console.log('어떤 메세지 읽음 처리할 지', messageid);
+router.get('/allmessages/list/:userid', async (req, res) => {
+  const { userid } = req.params;
+  console.log(`${userid}가 속한 대화방 리스트 가져올거임!`);
 
   try {
-    // 기존에 읽음 기록이 있는지 확인
-    const [existing] = await dbPromise.query(
-      `SELECT * FROM message_reads WHERE room_id = ? AND user_id = ?`,
-      [roomid, userid]
+    // dm_rooms에서 나랑 대화한 상대방을 골라내고 그 상대방 id를 기준으로 users 테이블을 조인해서 상대방의 username과 profile_image까지 같이 가져오기
+    const [partners] = await dbPromise.query(
+      `SELECT r.id AS room_id,
+        CASE
+          WHEN r.user1_id = ? THEN r.user2_id
+          WHEN r.user2_id = ? THEN r.user1_id
+        END AS partner_id,
+        u.username,
+        u.profile_image,
+        CASE
+          WHEN MAX(mr.room_id) IS NULL THEN false
+          ELSE true
+        END AS isRead,
+        MAX(mr.updated_at) AS lastReadTime
+      FROM dm_rooms r
+      JOIN users u
+        ON (
+          (r.user1_id = ? AND u.id = r.user2_id)
+          OR
+          (r.user2_id = ? AND u.id = r.user1_id)
+        )
+      LEFT JOIN message_reads mr
+        ON mr.room_id = r.id
+      WHERE r.user1_id = ? OR r.user2_id = ?
+      GROUP BY r.id, partner_id, u.username, u.profile_image`,
+      [userid, userid, userid, userid, userid, userid]
     );
+    console.log(`${userid} 가 속한 대화방 정보`, partners);
 
-    if (existing.length > 0) {
-      // 기존 기록이 있다면 업데이트
-      await dbPromise.query(
-        `UPDATE message_reads SET last_read_message_id = ?, updated_at = NOW()
-        WHERE room_id = ? AND user_id = ?`,
-        [messageid, roomid, userid]
-      );
-    } else {
-      // 없으면 읽음 기록 새로 삽입
-      await dbPromise.query(
-        `INSERT INTO message_reads (room_id, user_id, last_read_message_id)
-        VALUES (?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-        last_read_message_id = VALUES(last_read_message_id),
-        updated_at = NOW();`,
-        [roomid, userid, messageid]
-      );
+    if (partners.length === 0) {
+      return res.status(404).json({ message: '대화 나눈 사용자를 찾을 수 없습니다.' });
     }
 
-    const [result] = await dbPromise.query(
-      `SELECT last_read_message_id FROM message_reads
-        WHERE room_id = ? AND user_id = ?`,
-      [roomid, userid]
-    );
+    res.json({partners})
 
-    if (result.length > 0) {
-      res.json({ last_read_message_id: result[0].last_read_message_id });
-    } else {
-      res.json({ last_read_message_id: null });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: '읽음 처리 중 오류 발생' });
+
+  } catch (error) {
+    console.error("디엠방 가져오기 실패:", error);
+    res.status(500).json({ message: "서버 에러 발생" });
   }
-})
-
-
+});
 
 
 
