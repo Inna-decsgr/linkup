@@ -10,13 +10,13 @@ import '../index.css'
 
 export default function DirectMessage() {
   const { state } = useAuth();
-  const { userid, partnerid } = useParams();
+  const { userid, partnerid } = useParams();  // 대화하는 상대방의 "id" (11)
   const [ispartner, setIsPartner] = useState(false);
 
   const location = useLocation();
   const partner = location.state;
   const partnername = partner?.partnername;
-  const partner_id = partner?.partner_id;
+  const partner_id = partner?.partner_id;  // gildong_ 파트너가 지정한 아이디
   const partnerimage = partner?.profileimage;
 
   const [message, setMessage] = useState('');
@@ -37,7 +37,12 @@ export default function DirectMessage() {
         const roomid = data[0].dm_room_id;
         setRoomId(roomid);
         const lastMessageid = data[data.length - 1].id;
-        
+
+        const savedLastMessage = localStorage.getItem(`lastMessage_${roomid}`);
+        if (savedLastMessage) {
+          setLastMessage(savedLastMessage);
+        }
+
         // 새로 받은 메세지가 있다면 이 대화방에 들어왔을 때 읽음 처리를 해야함
         // 메세지 읽었다고 서버에 알리기(실시간 읽음 처리 위해서 socket으로 처리)
         socket.emit('read_message', {
@@ -54,6 +59,10 @@ export default function DirectMessage() {
     // 안 그러면 fetchAllMessages 가 다시 실행될 때 socket.on()이 중복 등록될 수도 있음
     const handleReadUpdate = ({ readerid, messageid }) => {
       console.log('상대방이 읽었음!', readerid, messageid);
+
+      // 로컬 스토리지에 저장
+      localStorage.setItem(`lastMessage_${roomid}`, messageid);
+      // 상태에도 반영
       setLastMessage(messageid);
     };
 
@@ -65,7 +74,7 @@ export default function DirectMessage() {
       socket.off('read_message_update', handleReadUpdate);
     }
 
-  }, [userid, partnerid]);
+  }, [roomid, userid, partnerid, partner_id]);
 
 
   // 사용자가 메세지를 보내면 서버에서 메세지를 저장한 다음 "나 이 메세지 디비에 저장했어!" 하고 알려주는데
@@ -245,18 +254,17 @@ export default function DirectMessage() {
             )
           })}
         </div>
-
-        <div>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder='메세지 보내기...'
-              className='border py-1 px-2 w-[400px]'
-            />
-          </form>
-        </div>
+      </div>
+      <div className='flex items-center text-sm'>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder='메세지 보내기...'
+            className='border py-1 px-2 w-[450px]'
+          />
+        </form>
       </div>
     </div>
   );
