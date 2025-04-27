@@ -28,7 +28,11 @@ module.exports = (io, db) => {
         // 이미 대화한 상대라면 기존 디엠룸 아이디를 roomId에 저장
         roomId = rows[0].id;
       } else {
-        // 처음 대화하는 상대라면 새로 디엠룸을 만들고 그 ID 가져오기
+        // 내 자신과 대화가 되지 않도록 return
+        if (user1 === user2) {
+          return
+        }
+        // 처음 대화하는 상대이면서 같은 사용자가 아니면 새로 디엠방을 만들고 그 ID 가져오기
         const [result] = await dbPromise.query(
           `INSERT INTO dm_rooms (user1_id, user2_id) VALUES (?, ?)`,
           [user1, user2]
