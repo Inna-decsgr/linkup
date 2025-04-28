@@ -1098,6 +1098,7 @@ router.get('/allmessages/list/:userid', async (req, res) => {
           WHEN r.user2_id = ? THEN r.user1_id
         END AS partner_id,
         u.username,
+        u.userid,
         u.profile_image,
         CASE
           WHEN MAX(mr.room_id) IS NULL THEN false
@@ -1114,7 +1115,7 @@ router.get('/allmessages/list/:userid', async (req, res) => {
       LEFT JOIN message_reads mr
         ON mr.room_id = r.id
       WHERE r.user1_id = ? OR r.user2_id = ?
-      GROUP BY r.id, partner_id, u.username, u.profile_image`,
+      GROUP BY r.id, partner_id, u.username, u.userid, u.profile_image`,
       [userid, userid, userid, userid, userid, userid]
     );
     console.log(`${userid} 가 속한 대화방 정보`, partners);
