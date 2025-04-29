@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import socket from '../socket.js'
 import { Imageformat } from '../utils/Imageformat';
 import { useAuth } from '../context/AuthContext.js';
@@ -10,6 +10,7 @@ import '../index.css'
 
 export default function DirectMessage() {
   const { state } = useAuth();
+  const navigate = useNavigate();
   const { userid, partnerid } = useParams();  // 대화하는 상대방의 "id" (11)
   const [ispartner, setIsPartner] = useState(false);
 
@@ -191,7 +192,7 @@ export default function DirectMessage() {
 
       lastTimestamp = currentTimestamp;
     });
-    
+
     if (currentGroup.length > 0) {
       grouped.push(currentGroup);
     }
@@ -204,15 +205,22 @@ export default function DirectMessage() {
     <div className='relative bg-red-100 w-[500px] h-[80vh] mx-auto flex flex-col border p-2'>
       <div className='absolute top-0 left-0 w-full bg-red-100 z-50 p-3'>
         <div className='flex items-center'>
-          <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
-          <div className='relative'>
+          <div className='pr-4'>
+            <button onClick={() => {navigate('/dm')}}>
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+          </div>
+          <div className='flex items-center'>
+            <img src={Imageformat(partnerimage)} alt="상대방 프로필 이미지" className='w-[40px] h-[40px] rounded-full object-cover mr-2' />
             <div className='relative'>
-              <p className='text-sm font-bold'>{partnername}</p>
-              <p className='text-[12px] text-gray-600'>{partner_id}</p>
+              <div className='relative'>
+                <p className='text-sm font-bold'>{partnername}</p>
+                <p className='text-[12px] text-gray-600'>{partner_id}</p>
+              </div>
+              {ispartner && (
+                <div className='absolute top-[6px] left-[45px] w-[7px] h-[7px] bg-violet-500 rounded-full'></div>
+              )}
             </div>
-            {ispartner && (
-              <div className='absolute top-[6px] left-[45px] w-[7px] h-[7px] bg-violet-500 rounded-full'></div>
-            )}
           </div>
         </div>
       </div>

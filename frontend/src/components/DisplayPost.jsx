@@ -170,7 +170,9 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
               <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
                 <i className="fa-regular fa-comment"></i>
               </button>
-              <span>{post.commentCount}</span>
+              {post.commentCount !== 0 && (
+                <span>{post.commentCount}</span>
+              )}
             </div>
             {showcomments && (
               <div ref={commentRef}>

@@ -55,12 +55,13 @@ export default function MessageList() {
   return (
     <div className='w-[500px] mx-auto'>
       <div>
-        <form>
+        <form className='relative text-sm'>
+          <i className="fa-solid fa-magnifying-glass absolute left-3 top-[9px] text-gray-400"></i>
           <input
             type="text"
             value={keyword}
             onChange={handleChange}
-            className='border py-1 px-3 w-full rounded-md mb-7'
+            className='border py-1 pl-9 w-full rounded-md mb-6'
             placeholder='검색'
           />
         </form>
