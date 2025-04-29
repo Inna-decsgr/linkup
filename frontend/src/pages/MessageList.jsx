@@ -8,6 +8,38 @@ export default function MessageList() {
   const { state } = useAuth();
   const navigate = useNavigate();
   const [messagelist, setMessageList] = useState([]);
+  const [keyword, setKeyword] = useState('');
+  const [result, setResult] = useState([]);
+  const [debouncedKeyword, setDebouncedKeyword] = useState('');
+
+
+  const handleChange = (e) => {
+    setKeyword(e.target.value);
+    
+    // 디바운스 처리
+    const timer = setTimeout(() => {
+      setDebouncedKeyword(e.target.value);  // 이때 keyword 말고 최신 값 e.target.value를 넘겨야함
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }
+  // 그리고 이걸 따로 useEffect에서 찍어
+  useEffect(() => {
+    console.log('디바운스 완료된 키워드', debouncedKeyword);
+  }, [debouncedKeyword]);
+
+  useEffect(() => {
+    if (debouncedKeyword) {
+      const filtered = messagelist.filter(m => m.username.includes(debouncedKeyword) || m.userid.includes(debouncedKeyword));
+      console.log('필터링한 결과', filtered);
+
+      // 검색어로 필터링한 결과를 result에 저장
+      setResult(filtered);
+    } else {
+      setResult([]);
+    }
+  }, [debouncedKeyword, messagelist])
+
 
   useEffect(() => {
     const fetchAllMessageList = async () => {
@@ -22,20 +54,34 @@ export default function MessageList() {
 
   return (
     <div className='w-[500px] mx-auto'>
-      <p>다이렉트 메세지 리스트 페이지</p>
-      <p>로그인한 사용자가 여태 디엠을 나눴던 모든 사용자와의 디엠 리스트 보여주는 페이지</p>
       <div>
-        {messagelist.map((msg, index) => {
-          return (
-            <div key={index} className='flex items-center border p-2 rounded-md cursor-pointer' onClick={() => navigate(`/dm/${state.user?.id}/${msg.partner_id}`, {state: {partnername:msg.username, partner_id:msg.userid, profileimage: msg.profile_image}})}>
+        <form>
+          <input
+            type="text"
+            value={keyword}
+            onChange={handleChange}
+            className='border py-1 px-3 w-full rounded-md mb-7'
+            placeholder='검색'
+          />
+        </form>
+      </div>
+      <p>메시지</p>
+      <div>
+        {(keyword ? result : messagelist).length > 0 ? (
+          (keyword ? result : messagelist).map((msg) => (
+            <div key={msg.partner_id} className='flex items-center border p-2 rounded-md cursor-pointer' onClick={() => navigate(`/dm/${state.user?.id}/${msg.partner_id}`, {state: {partnername:msg.username, partner_id:msg.userid, profileimage: msg.profile_image}})}>
               <img src={Imageformat(msg.profile_image)} alt="상대방 프로필 이미지" className='w-[50px] h-[50px] rounded-full object-cover'/>
               <div className='pl-2'>
                 <p className='text-sm'>{msg.username}</p>
                 <p className='text-xs text-gray-500'>{ formatTimeAgo(msg.lastReadTime)}</p>
               </div>
             </div>
-          )
-        })}
+          ))
+        ) : (
+            <div className='text-center text-gray-500 py-4'>
+              <p>검색 결과가 없습니다.</p>
+            </div>
+        )}
       </div>
     </div>
   );
