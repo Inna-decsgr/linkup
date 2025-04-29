@@ -6,7 +6,7 @@ import SearchUserCard from './SearchUserCard';
 
 
 
-export default function UserSearch({cancel, istag, onSelectUser}) {
+export default function UserSearch({cancel, istag, onSelectUser, isshare, onShareUser}) {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -92,9 +92,14 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
   }, [debouncedKeyword, handleSubmit])
 
   const selectUser = (user) => {
-    console.log('유저 태그', user);
-    onSelectUser(user);
-    cancel();
+    console.log('유저 선택됨', user);
+    if (istag ) {
+      onSelectUser(user);
+    } else if (isshare) {
+      onShareUser(user);
+    } else {
+      cancel();
+    }
   }
 
 
@@ -120,7 +125,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
                 <SearchUserCard user={user} />
               </div>
               <div>
-                {istag && (
+                {(istag || isshare) && (
                   <Button text="선택" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
                 )}
               </div>
@@ -132,7 +137,7 @@ export default function UserSearch({cancel, istag, onSelectUser}) {
           </div>
         )}
       </div>
-      {!istag && history.length > 0 && (
+      {!istag && !isshare && history.length > 0 && (
         <div className='mt-7'>
           <div className='flex items-center justify-between text-sm'>
             <p>최근 검색</p>
