@@ -9,6 +9,7 @@ import PostLike from '../components/PostLike';
 import PostComments from './PostComments';
 import PostBookmark from './PostBookmark';
 import { Imageformat } from '../utils/Imageformat';
+import PostShare from './PostShare';
 
 
 export default function DisplayPost({ post, fetchFollowersPost }) {
@@ -20,8 +21,10 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
     const status = localStorage.getItem('showlikecount');
     return status === 'true';  // 문자열로 저장되기 때문에 비교 필수!
   });
+  const [showshare, setShowShare] = useState(false);
   const settingRef = useRef(null);
   const commentRef = useRef(null);
+  const shareRef = useRef(null);
   
   const handleRemove = async (postid) => {
     console.log('삭제할 포스트 아이디', postid);
@@ -41,7 +44,19 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
       localStorage.setItem('showlikecount', !prev);
       return !prev;
     });
-  }
+  };
+
+  const handleToggleComments = (e) => {
+    e.stopPropagation();
+    setShowComments(prev => !prev);
+    setShowShare(false);
+  };
+
+  const handleToggleShare = (e) => {
+    e.stopPropagation();
+    setShowShare(prev => !prev);
+    setShowComments(false);
+  };
 
   useEffect(() => {
     // useEffect로 DOM이 준비된 뒤에 bullet 직접 수동으로 붙이기
@@ -69,6 +84,10 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
           if (showcomments) {
             setShowComments(false);
           }
+        } else if (shareRef.current && !shareRef.current.contains(e.target)) {
+          if (showshare) {
+            setShowShare(false);
+          }
         }
       }, 0)
     };
@@ -77,7 +96,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [showcomments]);
+  }, [showcomments, showshare]);
   // showcomments는 리액트의 상태값(state)이고, 지금 useEffect 안에서는 최초 렌더링 당시의 showcomments 값만 바라보고 있기 때문에 이 이후에 값이 바뀌어도 무시되면서 관련 기능들이 동작하지 않을 수 있음. 리액트가 항상 초기값(false)만 기억하고 있어서 나중에 true로 바뀌어도 useEffect안의 showcomments는 반응을 하지 못해서 닫히는 기능이 동작을 안함
   // showcomments를 의존성 배열에 추가해주면 showcomments 상태 값이 바뀔 때마다 useEffect를 다시 실행하게 되고 최신 상태값을 기준으로 외부 클릭 감지를 해주기 때문에 잘 동작할 것
 
@@ -163,22 +182,36 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
         <div className='flex justify-between'>
           <div className='flex'>
             <div>
-              {showlikecount}
               <PostLike postid={post.id} showlikecount={showlikecount} />
             </div>
             <div>
-              <button onClick={(e) => { e.stopPropagation();  setShowComments(prev => !prev) }}>
+              <button onClick={handleToggleComments}>
                 <i className="fa-regular fa-comment"></i>
               </button>
               {post.commentCount !== 0 && (
                 <span>{post.commentCount}</span>
               )}
+              {showcomments && (
+                <div ref={commentRef}>
+                  <PostComments post={post} fetchFollowersPost={fetchFollowersPost} />
+                </div>
+              )}
             </div>
-            {showcomments && (
-              <div ref={commentRef}>
-                <PostComments post={post} fetchFollowersPost={fetchFollowersPost} />
-              </div>
-            )}
+            <div>
+              <button onClick={handleToggleShare}>
+                <i className="fa-solid fa-paper-plane"></i>
+              </button>
+              {/**
+               * {post.commentCount !== 0 && (
+                  <span>{post.commentCount}</span>
+                )}
+               */}
+              {showshare && (
+                <div ref={shareRef}>
+                  <PostShare />
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <PostBookmark post={post} />
