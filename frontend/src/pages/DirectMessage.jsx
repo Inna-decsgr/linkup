@@ -172,6 +172,10 @@ export default function DirectMessage() {
     let currentGroup = [];
     let lastTimestamp = null;
 
+    if (!Array.isArray(messages)) {
+      return [];
+    }
+
     messages.forEach((msg) => {
       const currentTimestamp = new Date(msg.created_at).getTime();
 
@@ -187,7 +191,7 @@ export default function DirectMessage() {
 
       lastTimestamp = currentTimestamp;
     });
-
+    
     if (currentGroup.length > 0) {
       grouped.push(currentGroup);
     }

@@ -8,7 +8,7 @@ export default function MyProfile() {
   const { state } = useAuth();
   const [user, setUser] = useState(null);
 
-  const isMe = state.user.userid === userid;
+  const isMe = state.user?.userid === userid;
 
   useEffect(() => {
     const fetchUser = async () => {
