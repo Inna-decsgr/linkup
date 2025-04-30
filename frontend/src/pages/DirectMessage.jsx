@@ -248,13 +248,26 @@ export default function DirectMessage() {
                 return (
                   <div key={index} ref={scrollRef} className={`relative flex items-center ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
                     <div className={`flex items-center ${isSender ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
-                      <img
+                      {m.sender_id !== state.user?.id && (
+                        <img
                         src={Imageformat(m.sender_profile_image)}
                         alt="프로필 이미지"
                         className='w-[40px] h-[40px] rounded-full object-cover mx-2' />
+                      )}
                     </div>
                     <div className={`rounded-xl ${isSender ? 'bg-blue-100' : 'bg-white'} max-w-[70%] py-2 px-3`}>
-                      <p className='text-sm'>{m.content}</p>
+                      {m.content ? (
+                        <p className='text-sm'>{m.content}</p>
+                      ) : (
+                          <div>
+                            <div className='flex items-center'>
+                              <img src={Imageformat(m.sender_profile_image)} alt="공유한 사람 프로필 이미지" className='w-[35px] h-[35px] object-cover rounded-full mr-2'/>
+                              <p className='text-sm font-bold'>{m.sender_userid}</p>
+                            </div>
+                            <img src={`http://localhost:5000/images/${m.shared_post_images}`} alt='공유된 게시물 이미지' className='w-[200px] h-[200px] object-cover' />
+                            <p className='text-sm'><span className='font-bold mr-2'>{m.sender_userid}</span>{m.shared_post_content}</p>
+                          </div>
+                      )}
                     </div>
                     {isSender && m.id === Number(lastmessage) && (
                       <p className='absolute bottom-[-18px] right-3 text-[11px] text-gray-600'>읽음</p>
