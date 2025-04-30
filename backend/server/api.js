@@ -1051,7 +1051,6 @@ router.get('/messages/:user1/:user2', async (req, res) => {
         WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)`,
       [user1, user2, user2, user1]
     );
-    console.log('두 사용자 조합의 디엠룸 아이디', roomRows[0].id);
 
     if (roomRows.length === 0) {
       return res.status(404).json({ message: 'DM 기록이 없습니다.' });
@@ -1064,11 +1063,18 @@ router.get('/messages/:user1/:user2', async (req, res) => {
       // 메세지에 대한 모든 항목과 보낸 사람, 받은 사람의 정보를 JOIN으로 연결해서 별칭(AS) 로 가져오기
       `SELECT m.*,
               s.id AS sender_id, s.userid AS sender_userid, s.username AS sender_username, s.profile_image AS sender_profile_image,
-              r.id AS receiver_id, r.userid AS receiver_userid, r.username AS receiver_username, r.profile_image AS receiver_profile_image
+              r.id AS receiver_id, r.userid AS receiver_userid, r.username AS receiver_username, r.profile_image AS receiver_profile_image,
+              ps.post_id AS shared_post_id,
+              p.content AS shared_post_content,
+              GROUP_CONCAT(pi.image_url ORDER BY pi.id) AS shared_post_images
         FROM messages m
-        JOIN users s ON m.sender_id = s.id
-        JOIN users r ON m.receiver_id = r.id 
+        LEFT JOIN users s ON m.sender_id = s.id
+        LEFT JOIN users r ON m.receiver_id = r.id
+        LEFT JOIN post_shares ps ON m.post_share_id = ps.id
+        LEFT JOIN posts p ON ps.post_id = p.id
+        LEFT JOIN post_images pi ON p.id = pi.post_id
         WHERE m.dm_room_id = ?
+        GROUP BY m.id
         ORDER BY m.created_at ASC`,
       [dmRoomId]
     )
@@ -1132,6 +1138,7 @@ router.get('/allmessages/list/:userid', async (req, res) => {
     res.status(500).json({ message: "서버 에러 발생" });
   }
 });
+
 
 
 
