@@ -6,7 +6,7 @@ import SearchUserCard from './SearchUserCard';
 
 
 
-export default function UserSearch({cancel, istag, onSelectUser, isshare, onShareUser}) {
+export default function UserSearch({cancel, istag, onSelectUser, isshare, onShareUser, postshare}) {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -97,6 +97,7 @@ export default function UserSearch({cancel, istag, onSelectUser, isshare, onShar
       onSelectUser(user);
     } else if (isshare) {
       onShareUser(user);
+      postshare();
     } else {
       cancel();
     }
@@ -125,8 +126,11 @@ export default function UserSearch({cancel, istag, onSelectUser, isshare, onShar
                 <SearchUserCard user={user} />
               </div>
               <div>
-                {(istag || isshare) && (
+                {(istag) && (
                   <Button text="선택" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
+                )}
+                {(isshare) && (
+                  <Button text="공유" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
                 )}
               </div>
             </div>

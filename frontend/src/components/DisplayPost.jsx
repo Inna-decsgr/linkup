@@ -208,7 +208,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
                */}
               {showshare && (
                 <div ref={shareRef}>
-                  <PostShare />
+                  <PostShare post={post} />
                 </div>
               )}
             </div>
