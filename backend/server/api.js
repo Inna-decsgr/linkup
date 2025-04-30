@@ -1142,6 +1142,86 @@ router.get('/allmessages/list/:userid', async (req, res) => {
 
 
 
+// 디엠방으로 게시물 공유
+router.post('/post/share', async (req, res) => {
+  const { userid, partnerid, post } = req.body;
+  console.log('공유하려는 사용자', userid);
+  console.log('공유받는 사용자', partnerid);
+  console.log('공유하려는 게시물', post);
+
+  if (!userid || !partnerid || !post) {
+    return res.status(400).json({ message: '필수 정보가 부족합니다.' });
+  }
+
+  try {
+    const [shareresult] = await dbPromise.query(
+      `SELECT id FROM dm_rooms WHERE user1_id = ? AND user2_id = ?`,
+      [userid, partnerid]
+    );
+    
+    let roomId;
+
+    if (shareresult.length > 0) {
+      // 이미 대화한 상대라면 기존 디엠룸 아이디를 roomId에 저장
+      roomId = shareresult[0].id;
+    } else {
+      // 내 자신과 대화가 되지 않도록 return
+      if (userid === partnerid) {
+        return
+      }
+      // 처음 대화하는 상대이면서 같은 사용자가 아니면 새로 디엠방을 만들고 그 ID 가져오기
+      const [result] = await dbPromise.query(
+        `INSERT INTO dm_rooms (user1_id, user2_id) VALUES (?, ?)`,
+        [userid, partnerid]
+      );
+      roomId = result.insertId;
+    }
+    
+    // 공유된 게시물 post_shares 테이블에 먼저 insert
+    const [shareInsert] = await dbPromise.query(
+      `INSERT INTO post_shares (sender_id, receiver_id, post_id, room_id) VALUES (?, ?, ?, ?)`,
+      [userid, partnerid, post.id, roomId]
+    );
+    const postShareId = shareInsert.insertId
+
+    // 메시지 테이블에 공유된 게시물 저장할 때 post_share_id 사용
+    const [insertResult] = await dbPromise.query(
+      'INSERT INTO messages (dm_room_id, sender_id, receiver_id, post_share_id, is_share) VALUES (?, ?, ?, ?, ?)',
+      [roomId, userid, partnerid, postShareId, true]
+    );
+
+    // 메시지 보낸 사람 정보 가져오기
+    const [senderRows] = await dbPromise.query(
+      `SELECT username, userid, profile_image FROM users WHERE id = ?`,
+      [userid]
+    );
+
+    const senderInfo = senderRows[0];
+
+    // ✅ 보낸 사람 정보 추가
+    const enrichedMessage = {
+      id: insertResult.insertId,
+      room_id: roomId,
+      sender_id: userid,
+      receiver_id: partnerid,
+      post_share_id: postShareId,
+      is_share: true,
+      created_at: new Date().toISOString(),
+      sender_username: senderInfo.username,
+      sender_userid: senderInfo.userid,
+      sender_profile_image: senderInfo.profile_image,
+      shared_post: post
+    };
+    return res.status(200).json(enrichedMessage);
+    
+  } catch (err) {
+    console.error('게시물 공유 처리 중 에러 발생', err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+});
+
+
+
 
 
 module.exports = router; // 라우터 내보내기
