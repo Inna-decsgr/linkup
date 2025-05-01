@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Imageformat } from '../utils/Imageformat';
-import { formatTimeAgo } from '../utils/formatTimeage';
+import { formatTimeAgo } from '../utils/formatTimeago';
 import { useNavigate } from 'react-router-dom';
 
 export default function MessageList() {
