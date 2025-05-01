@@ -714,6 +714,20 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
       `SELECT post_id, image_url FROM post_images WHERE post_id IN (?)`, [postIds]
     );
 
+    // 공유 횟수 가져오기
+    const [sharecounts] = await dbPromise.query(
+      `SELECT post_id, COUNT(*) AS count
+      FROM post_shares
+      WHERE post_id IN (?)
+      GROUP BY post_id`,
+      [postIds]
+    )
+    // 3. 공유 횟수를 post_id 기준으로 매핑
+    const shareCountMap = {};
+    sharecounts.forEach(row => {
+      shareCountMap[row.post_id] = row.count;
+    });
+
     // posts 배열에 tagged_users, images 추가
     const postResults = posts.map(post => {
       const tagged = taggedUser
@@ -724,10 +738,13 @@ router.get('/users/followers/posts/:userid', async (req, res) => {
         .filter(img => img.post_id === post.id)
         .map(img => img.image_url);
       
+      const shareCount = shareCountMap[post.id] || 0;
+      
       return {
         ...post,
         tagged_users: tagged,
-        images: imgs
+        images: imgs,
+        shareCount: shareCount
       };
     });
     
@@ -1219,8 +1236,6 @@ router.post('/post/share', async (req, res) => {
     res.status(500).json({ message: '서버 오류' });
   }
 });
-
-
 
 
 

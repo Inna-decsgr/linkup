@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
@@ -22,6 +22,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
     return status === 'true';  // 문자열로 저장되기 때문에 비교 필수!
   });
   const [showshare, setShowShare] = useState(false);
+  const [sharecount, setShareCount] = useState(null);
   const settingRef = useRef(null);
   const commentRef = useRef(null);
   const shareRef = useRef(null);
@@ -201,11 +202,7 @@ export default function DisplayPost({ post, fetchFollowersPost }) {
               <button onClick={handleToggleShare}>
                 <i className="fa-solid fa-paper-plane"></i>
               </button>
-              {/**
-               * {post.commentCount !== 0 && (
-                  <span>{post.commentCount}</span>
-                )}
-               */}
+              {post.shareCount > 0 && <span>{post.shareCount}</span>}
               {showshare && (
                 <div ref={shareRef}>
                   <PostShare post={post} setShowShare={setShowShare} />
