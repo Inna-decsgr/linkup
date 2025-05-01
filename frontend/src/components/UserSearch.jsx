@@ -6,7 +6,7 @@ import SearchUserCard from './SearchUserCard';
 
 
 
-export default function UserSearch({cancel, istag, onSelectUser, isshare, onShareUser, postshare}) {
+export default function UserSearch({cancel, istag, onSelectUser, isshare, onShareUser, setShowShare}) {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -94,10 +94,11 @@ export default function UserSearch({cancel, istag, onSelectUser, isshare, onShar
   const selectUser = (user) => {
     console.log('유저 선택됨', user);
     if (istag ) {
-      onSelectUser(user);
+      onSelectUser(user);  // 태그할 사용자 선택
+      cancel();  // 태그 컴포넌트 닫기
     } else if (isshare) {
-      onShareUser(user);
-      postshare();
+      onShareUser(user);  // 공유할 사용자 선택
+      setShowShare(false); // 공유 컴포넌트 닫기
     } else {
       cancel();
     }
@@ -130,7 +131,7 @@ export default function UserSearch({cancel, istag, onSelectUser, isshare, onShar
                   <Button text="선택" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
                 )}
                 {(isshare) && (
-                  <Button text="공유" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
+                  <Button text="보내기" width="w-[60px]" onClick={(e) => { e.stopPropagation(); selectUser(user) }} />
                 )}
               </div>
             </div>

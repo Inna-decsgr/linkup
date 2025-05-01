@@ -2,13 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import UserSearch from './UserSearch';
 import { useAuth } from '../context/AuthContext';
 
-export default function PostShare({ post }) {
+export default function PostShare({ post, setShowShare }) {
   const { state } = useAuth();
   const [shareuser, setShareUser] = useState('');
 
 
   const sharePost = useCallback(async () => {
-    console.log('공유 시도');
     if (shareuser && shareuser.id) {
       const res = await fetch(`http://localhost:5000/api/post/share`, {
         method: 'POST',
@@ -38,9 +37,7 @@ export default function PostShare({ post }) {
 
   return (
     <div>
-      포스트 공유하기
-      {shareuser.id}
-      <UserSearch isshare={true} onShareUser={setShareUser} postshare={ sharePost} />
+      <UserSearch isshare={true} onShareUser={setShareUser} setShowShare={setShowShare} />
     </div>
   );
 }
