@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { format, isToday, isYesterday } from 'date-fns';
 import ko from 'date-fns/locale/ko';
 import '../index.css'
+import { formatTimeAgo } from '../utils/formatTimeago.js';
 
 
 export default function DirectMessage() {
@@ -41,7 +42,11 @@ export default function DirectMessage() {
 
         const savedLastMessage = localStorage.getItem(`lastMessage_${roomid}`);
         if (savedLastMessage) {
-          setLastMessage(savedLastMessage);
+          try {
+            setLastMessage(JSON.parse(savedLastMessage));
+          } catch (err) {
+            console.warn('lastMessage JSON 파싱 실패', err);
+          }
         }
 
         // 새로 받은 메세지가 있다면 이 대화방에 들어왔을 때 읽음 처리를 해야함
@@ -64,7 +69,11 @@ export default function DirectMessage() {
       // 로컬 스토리지에 저장
       localStorage.setItem(`lastMessage_${roomid}`, messageid);
       // 상태에도 반영
-      setLastMessage(messageid);
+      setLastMessage({
+        readerid,
+        messageid,
+        timestamp: new Date(),
+      });
     };
 
     // read_message_update 소켓 이벤트가 서버에서 발생되면, handleReadUpdate 함수를 실행해줘라는 뜻
@@ -244,7 +253,10 @@ export default function DirectMessage() {
             <div key={index} className='mb-6'>
               <div className='text-center text-gray-500 text-sm mb-2'>{dateLabel}</div>
               {group.map((m, index) => {
-                const isSender = m.sender_id === Number(userid);
+                const isSender = m.sender_id === Number(userid);  // 내가 보낸 메시지인지
+                const isReadByPartner = lastmessage?.readerid !== Number(userid); // 읽은 사람이 상대방일 경우에만
+                const isLastReadMessage = m.id === lastmessage?.messageid;
+
                 return (
                   <div key={index} ref={scrollRef} className={`relative flex items-center ${isSender ? 'justify-end' : 'justify-start'} mb-2`}>
                     <div className={`flex items-center ${isSender ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
@@ -269,8 +281,10 @@ export default function DirectMessage() {
                           </div>
                       )}
                     </div>
-                    {isSender && m.id === Number(lastmessage) && (
-                      <p className='absolute bottom-[-18px] right-3 text-[11px] text-gray-600'>읽음</p>
+                    {isSender && isLastReadMessage && isReadByPartner && (
+                      <p className='absolute bottom-[-18px] right-3 text-[11px] text-gray-600'>
+                        {formatTimeAgo(lastmessage?.timestamp)}
+                      </p>
                     )}
                   </div>
                 )
