@@ -120,7 +120,20 @@ module.exports = (io, db) => {
       console.log('읽은 사람', userid);
       console.log('어떤 메세지 읽음 처리할 지', messageid);
 
-      // 기존에 읽음 기록이 있는지 확인
+      // 1. 먼저 메시지의 sender_id 조회
+      const [messageRow] = await dbPromise.query(
+        `SELECT sender_id FROM messages WHERE id = ?`,
+        [messageid]
+      );
+
+      // 2. 보낸 사람이면 읽음 처리하지 않음!
+      if (messageRow.length === 0 || messageRow[0].sender_id === parseInt(userid)) {
+        console.log('본인이 보낸 메시지이므로 읽음 처리하지 않음');
+        return;
+      }
+
+
+      // 3. 기존에 읽음 기록이 있는지 확인
       const [existing] = await dbPromise.query(
         `SELECT * FROM message_reads WHERE room_id = ? AND user_id = ?`,
         [roomid, userid]
@@ -146,7 +159,7 @@ module.exports = (io, db) => {
       }
 
 
-      // 메세지 읽음 처리 후 상대방에게 읽었다고 알려주기!
+      // 4. 메세지 읽음 처리 완료 후 상대방에게 읽었다고 알려주기!
       socket.to(roomid).emit("read_message_update", {
         readerid: userid,
         messageid: messageid,
