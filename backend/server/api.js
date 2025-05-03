@@ -1122,12 +1122,7 @@ router.get('/allmessages/list/:userid', async (req, res) => {
         END AS partner_id,
         u.username,
         u.userid,
-        u.profile_image,
-        CASE
-          WHEN MAX(mr.room_id) IS NULL THEN false
-          ELSE true
-        END AS isRead,
-        MAX(mr.updated_at) AS lastReadTime
+        u.profile_image
       FROM dm_rooms r
       JOIN users u
         ON (
@@ -1135,20 +1130,59 @@ router.get('/allmessages/list/:userid', async (req, res) => {
           OR
           (r.user2_id = ? AND u.id = r.user1_id)
         )
-      LEFT JOIN message_reads mr
-        ON mr.room_id = r.id
-      WHERE r.user1_id = ? OR r.user2_id = ?
-      GROUP BY r.id, partner_id, u.username, u.userid, u.profile_image`,
+      WHERE r.user1_id = ? OR r.user2_id = ?`,
       [userid, userid, userid, userid, userid, userid]
     );
+    
+    const result = await Promise.all(partners.map(async partner => {
+      // 1. 내가 보낸 마지막 메시지
+      const [lastMsgRows] = await dbPromise.query(
+        `SELECT id, created_at FROM messages
+          WHERE sender_id = ? AND (
+            (sender_id = ? AND receiver_id = ?) OR
+            (sender_id = ? AND receiver_id = ?)
+          )
+          ORDER BY created_at DESC
+          LIMIT 1`,
+        [userid, userid, partner.partner_id, partner.partner_id, userid]
+      );
+      const lastSentMessage = lastMsgRows[0];
+      const lastSentMessageId = lastSentMessage?.id;
+      const lastSentAt = lastSentMessage?.created_at;
+
+      // 2. 상대방이 마지막으로 읽은 메시지
+      const [readRows] = await dbPromise.query(
+        `SELECT last_read_message_id, updated_at FROM message_reads
+          WHERE user_id = ? AND room_id = ?
+          ORDER BY updated_at DESC
+          LIMIT 1`,
+        [partner.partner_id, partner.room_id]
+      );
+      const lastReadMessageId = readRows[0]?.last_read_message_id;
+      const lastReadTime = readRows[0]?.updated_at;
+
+      // 3. isRead 여부
+      const isRead = lastSentMessageId && lastSentMessageId === lastReadMessageId;
+
+      return {
+        ...partner,
+        isRead,
+        lastMessageId: lastSentMessageId,
+        lastSentAt,
+        lastReadMessageId,
+        lastReadTime: isRead ? lastReadTime : null // 읽지 않았으면 null로 처리
+      };
+    }));
+
+    const sortedResult = result.sort((a, b) => new Date(b.lastSentAt) - new Date(a.lastSentAt));
+
     console.log(`${userid} 가 속한 대화방 정보`, partners);
 
     if (partners.length === 0) {
       return res.status(404).json({ message: '대화 나눈 사용자를 찾을 수 없습니다.' });
     }
 
-    res.json({partners})
-
+    res.json({ partners: sortedResult });
 
   } catch (error) {
     console.error("디엠방 가져오기 실패:", error);
