@@ -74,7 +74,9 @@ export default function MessageList() {
               <img src={Imageformat(msg.profile_image)} alt="상대방 프로필 이미지" className='w-[50px] h-[50px] rounded-full object-cover'/>
               <div className='pl-2'>
                 <p className='text-sm'>{msg.username}</p>
-                <p className='text-xs text-gray-500'>{ formatTimeAgo(msg.lastReadTime)}</p>
+                <p className='text-xs text-gray-500'>
+                  {msg.isRead && msg.lastReadTime ? formatTimeAgo(msg.lastReadTime): '전송됨'}
+                </p>
               </div>
             </div>
           ))
