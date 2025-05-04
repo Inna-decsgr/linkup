@@ -52,6 +52,27 @@ export default function MessageList() {
   }, [state.user?.id])
 
 
+  const showMessage = (msg) => {
+    if (!msg.isRead) return '전송됨';
+
+    if (msg.isRead && msg.unreadCountFromPartner > 0) return '새 메시지';
+
+    // 상대방 메시지는 다 읽었지만, 나는 아직 답장을 안 한 상태
+    if (
+      msg.isRead &&
+      msg.unreadCountFromPartner === 0 &&
+      msg.myLastReadMessageId > msg.lastMessageId
+    ) {
+      return msg.lastReadMessageContentFromPartner || '';
+    }
+
+    // 그 외에는 그냥 '읽음 시간' 보여주기
+    return msg.lastReadTime ? formatTimeAgo(msg.lastReadTime) : '';
+  };
+
+
+
+
   return (
     <div className='w-[500px] mx-auto'>
       <div>
@@ -72,12 +93,12 @@ export default function MessageList() {
           (keyword ? result : messagelist).map((msg) => (
             <div key={msg.partner_id} className='flex items-center border p-2 rounded-md cursor-pointer' onClick={() => navigate(`/dm/${state.user?.id}/${msg.partner_id}`, {state: {partnername:msg.username, partner_id:msg.userid, profileimage: msg.profile_image}})}>
               <img src={Imageformat(msg.profile_image)} alt="상대방 프로필 이미지" className='w-[50px] h-[50px] rounded-full object-cover'/>
-              <div className='pl-2'>
-                <p className='text-sm'>{msg.username}</p>
-                <p className='text-xs text-gray-500'>
-                  {msg.isRead && msg.lastReadTime ? formatTimeAgo(msg.lastReadTime): '전송됨'}
-                </p>
+              <div className="pl-2">
+                <p className="text-sm">{msg.username}</p>
+                <p>{ showMessage(msg)}</p>
               </div>
+
+
             </div>
           ))
         ) : (
