@@ -1108,87 +1108,134 @@ router.get('/messages/:user1/:user2', async (req, res) => {
 
 
 
+
 router.get('/allmessages/list/:userid', async (req, res) => {
   const { userid } = req.params;
   console.log(`${userid}가 속한 대화방 리스트 가져올거임!`);
 
   try {
-    // dm_rooms에서 나랑 대화한 상대방을 골라내고 그 상대방 id를 기준으로 users 테이블을 조인해서 상대방의 username과 profile_image까지 같이 가져오기
+    // 1. 나와 대화한 상대방 목록 가져오기
     const [partners] = await dbPromise.query(
       `SELECT r.id AS room_id,
-        CASE
-          WHEN r.user1_id = ? THEN r.user2_id
-          WHEN r.user2_id = ? THEN r.user1_id
-        END AS partner_id,
-        u.username,
-        u.userid,
-        u.profile_image
+              CASE
+                WHEN r.user1_id = ? THEN r.user2_id
+                WHEN r.user2_id = ? THEN r.user1_id
+              END AS partner_id,
+              u.username,
+              u.userid,
+              u.profile_image
       FROM dm_rooms r
       JOIN users u
-        ON (
-          (r.user1_id = ? AND u.id = r.user2_id)
-          OR
-          (r.user2_id = ? AND u.id = r.user1_id)
-        )
+        ON ((r.user1_id = ? AND u.id = r.user2_id)
+          OR (r.user2_id = ? AND u.id = r.user1_id))
       WHERE r.user1_id = ? OR r.user2_id = ?`,
       [userid, userid, userid, userid, userid, userid]
     );
-    
-    const result = await Promise.all(partners.map(async partner => {
-      // 1. 내가 보낸 마지막 메시지
-      const [lastMsgRows] = await dbPromise.query(
-        `SELECT id, created_at FROM messages
-          WHERE sender_id = ? AND (
-            (sender_id = ? AND receiver_id = ?) OR
-            (sender_id = ? AND receiver_id = ?)
-          )
-          ORDER BY created_at DESC
-          LIMIT 1`,
-        [userid, userid, partner.partner_id, partner.partner_id, userid]
-      );
-      const lastSentMessage = lastMsgRows[0];
-      const lastSentMessageId = lastSentMessage?.id;
-      const lastSentAt = lastSentMessage?.created_at;
 
-      // 2. 상대방이 마지막으로 읽은 메시지
-      const [readRows] = await dbPromise.query(
-        `SELECT last_read_message_id, updated_at FROM message_reads
-          WHERE user_id = ? AND room_id = ?
-          ORDER BY updated_at DESC
-          LIMIT 1`,
-        [partner.partner_id, partner.room_id]
-      );
-      const lastReadMessageId = readRows[0]?.last_read_message_id;
-      const lastReadTime = readRows[0]?.updated_at;
+    // 2. 각 상대방과의 대화 정보 수집
+    const result = await Promise.all(partners.map(partner => getPartnerChatInfo(partner, userid)));
 
-      // 3. isRead 여부
-      const isRead = lastSentMessageId && lastSentMessageId === lastReadMessageId;
-
-      return {
-        ...partner,
-        isRead,
-        lastMessageId: lastSentMessageId,
-        lastSentAt,
-        lastReadMessageId,
-        lastReadTime: isRead ? lastReadTime : null // 읽지 않았으면 null로 처리
-      };
-    }));
-
+    // 3. 최근 메시지 순으로 정렬
     const sortedResult = result.sort((a, b) => new Date(b.lastSentAt) - new Date(a.lastSentAt));
-
-    console.log(`${userid} 가 속한 대화방 정보`, partners);
 
     if (partners.length === 0) {
       return res.status(404).json({ message: '대화 나눈 사용자를 찾을 수 없습니다.' });
     }
 
     res.json({ partners: sortedResult });
-
   } catch (error) {
     console.error("디엠방 가져오기 실패:", error);
     res.status(500).json({ message: "서버 에러 발생" });
   }
 });
+
+// 💡 리팩토링된 파트너별 채팅 정보 수집 함수
+async function getPartnerChatInfo(partner, userid) {
+  const roomId = partner.room_id;
+  const partnerId = partner.partner_id;
+
+  // 1. 내가 보낸 마지막 메시지
+  const [lastMsgRows] = await dbPromise.query(
+    `SELECT id, created_at FROM messages
+    WHERE sender_id = ? AND ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
+    ORDER BY created_at DESC
+    LIMIT 1`,
+    [userid, userid, partnerId, partnerId, userid]
+  );
+  const lastSentMessage = lastMsgRows[0];
+  const lastSentMessageId = lastSentMessage?.id;
+  const lastSentAt = lastSentMessage?.created_at;
+
+  // 2. 상대방이 마지막으로 읽은 내 메시지
+  const [readRows] = await dbPromise.query(
+    `SELECT last_read_message_id, updated_at FROM message_reads
+    WHERE user_id = ? AND room_id = ?
+    ORDER BY updated_at DESC
+    LIMIT 1`,
+    [partnerId, roomId]
+  );
+  const lastReadMessageId = readRows[0]?.last_read_message_id;
+  const lastReadTime = readRows[0]?.updated_at;
+
+  // 3. 내가 읽은 마지막 메시지 ID
+  const [lastReadRows] = await dbPromise.query(
+    `SELECT last_read_message_id FROM message_reads
+    WHERE user_id = ? AND room_id = ?`,
+    [userid, roomId]
+  );
+  const myLastReadId = lastReadRows[0]?.last_read_message_id;
+
+  // 4. 내가 읽은 메시지 내용 (상대방이 보낸 것 중)
+  let lastReadMessageContent = null;
+  if (myLastReadId) {
+    const [msgRows] = await dbPromise.query(
+      `SELECT content FROM messages WHERE id = ? AND sender_id = ? AND receiver_id = ?`,
+      [myLastReadId, partnerId, userid]
+    );
+    lastReadMessageContent = msgRows[0]?.content || null;
+  }
+
+  // 5. 아직 내가 읽지 않은 메시지 (상대방이 보낸 것)
+  let unreadCount = 0;
+  let lastUnreadMessageContent = null;
+
+  if (myLastReadId) {
+    const [unreadRows] = await dbPromise.query(
+      `SELECT content FROM messages
+      WHERE sender_id = ? AND receiver_id = ? AND id > ?
+      ORDER BY id ASC`,
+      [partnerId, userid, myLastReadId]
+    );
+    unreadCount = unreadRows.length;
+    lastUnreadMessageContent = unreadRows.at(-1)?.content || null;
+  } else {
+    const [unreadRows] = await dbPromise.query(
+      `SELECT content FROM messages
+      WHERE sender_id = ? AND receiver_id = ?
+      ORDER BY id ASC`,
+      [partnerId, userid]
+    );
+    unreadCount = unreadRows.length;
+    lastUnreadMessageContent = unreadRows.at(-1)?.content || null;
+  }
+
+  // 6. 내가 보낸 마지막 메시지가 읽혔는지 여부
+  const isRead = lastSentMessageId && lastSentMessageId === lastReadMessageId;
+
+  return {
+    ...partner,
+    isRead, // 내가 보낸 메시지가 읽혔는지 여부
+    lastMessageId: lastSentMessageId,
+    lastSentAt,
+    lastReadMessageId, // 상대방이 마지막으로 읽은 내 메시지 ID
+    lastReadTime: isRead ? lastReadTime : null,
+    myLastReadMessageId: myLastReadId, // 내가 마지막으로 읽은 메시지 ID
+    unreadCountFromPartner: unreadCount, // 내가 아직 읽지 않은 메시지 개수
+    lastUnreadMessageContent, // 읽지 않은 메시지 중 마지막 내용
+    lastReadMessageContentFromPartner: lastReadMessageContent // 읽은 메시지 중 마지막 내용
+  };
+}
+
 
 
 
