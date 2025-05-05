@@ -93,12 +93,15 @@ export default function MessageList() {
           (keyword ? result : messagelist).map((msg) => (
             <div key={msg.partner_id} className='flex items-center border p-2 rounded-md cursor-pointer' onClick={() => navigate(`/dm/${state.user?.id}/${msg.partner_id}`, {state: {partnername:msg.username, partner_id:msg.userid, profileimage: msg.profile_image}})}>
               <img src={Imageformat(msg.profile_image)} alt="상대방 프로필 이미지" className='w-[50px] h-[50px] rounded-full object-cover'/>
-              <div className="pl-2">
-                <p className="text-sm">{msg.username}</p>
-                <p>{ showMessage(msg)}</p>
+              <div className="w-full flex justify-between items-center pl-2">
+                <div>
+                  <p className="text-sm font-bold">{msg.username}</p>
+                  <p className='text-xs text-gray-600'>{showMessage(msg)}</p>
+                </div>
+                {msg.isRead && msg.unreadCountFromPartner === 0 && msg.myLastReadMessageId > msg.lastMessageId && (
+                  <div className='w-[8px] h-[8px] bg-violet-500 rounded-full mr-3'></div>
+                )}
               </div>
-
-
             </div>
           ))
         ) : (
