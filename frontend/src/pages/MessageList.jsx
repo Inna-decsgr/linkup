@@ -98,7 +98,7 @@ export default function MessageList() {
                   <p className="text-sm font-bold">{msg.username}</p>
                   <p className='text-xs text-gray-600'>{showMessage(msg)}</p>
                 </div>
-                {msg.isRead && msg.unreadCountFromPartner === 0 && msg.myLastReadMessageId > msg.lastMessageId && (
+                {msg.isRead && msg.unreadCountFromPartner > 0 &&(
                   <div className='w-[8px] h-[8px] bg-violet-500 rounded-full mr-3'></div>
                 )}
               </div>
